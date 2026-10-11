@@ -1,0 +1,6 @@
+{
+  "name": "techcircuithub",
+  "description": "Premier SaaS platform for ECE, VLSI, and ACT engineering students in India – internships, trainings, projects, learning resources, and component tracking.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

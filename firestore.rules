@@ -1,0 +1,197 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Default Deny
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Helper functions
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    function isAdmin() {
+      return isSignedIn() && (
+        request.auth.token.email == 'rock86367@gmail.com' ||
+        request.auth.token.admin == true ||
+        exists(/databases/$(database)/documents/admins/$(request.auth.uid))
+      );
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    // Admins Collection
+    match /admins/{adminId} {
+      allow read: if isSignedIn();
+      allow write: if isAdmin();
+    }
+
+    // Test Connection (boot health check)
+    match /test/{testId} {
+      allow read: if true;
+    }
+
+    // Users Collection
+    match /users/{userId} {
+      allow read: if isOwner(userId) || isAdmin();
+      allow create: if isOwner(userId) && (
+        incoming().role == 'student' || isAdmin()
+      );
+      allow update: if isOwner(userId) && (
+        // Block role escalation unless admin
+        (incoming().role == existing().role) || isAdmin()
+      ) || isAdmin();
+      allow delete: if isAdmin();
+    }
+
+    // Companies Collection
+    match /companies/{companyId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    // Skills Collection
+    match /skills/{skillId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    // Opportunities Collection
+    match /opportunities/{opportunityId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    // Saved Items Collection
+    match /saved_items/{savedId} {
+      allow read: if isSignedIn() && (resource.data.userId == request.auth.uid || isAdmin());
+      allow create: if isSignedIn() && incoming().userId == request.auth.uid;
+      allow update, delete: if isSignedIn() && (existing().userId == request.auth.uid || isAdmin());
+    }
+
+    // Applications Collection
+    match /applications/{applicationId} {
+      allow read: if isSignedIn() && (resource.data.userId == request.auth.uid || isAdmin());
+      allow create: if isSignedIn() && incoming().userId == request.auth.uid;
+      allow update: if isSignedIn() && (
+        (existing().userId == request.auth.uid && incoming().userId == request.auth.uid) || isAdmin()
+      );
+      allow delete: if isSignedIn() && (existing().userId == request.auth.uid || isAdmin());
+    }
+
+    // Student Skills Collection (Points calculated server-side or admin managed)
+    match /student_skills/{skillProgressId} {
+      allow read: if isSignedIn() && (resource.data.userId == request.auth.uid || isAdmin());
+      allow write: if isAdmin();
+    }
+
+    // Badges Collection
+    match /badges/{badgeId} {
+      allow read: if isSignedIn() && (resource.data.userId == request.auth.uid || isAdmin());
+      allow write: if isAdmin();
+    }
+
+    // Projects Collection
+    match /projects/{projectId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    // Cart Collection
+    match /cart/{cartId} {
+      allow read: if isSignedIn() && (cartId == request.auth.uid || resource.data.userId == request.auth.uid || isAdmin());
+      allow write: if isSignedIn() && (cartId == request.auth.uid || incoming().userId == request.auth.uid || isAdmin());
+    }
+
+    // Orders Collection (Created/updated by Server or Admin)
+    match /orders/{orderId} {
+      allow read: if isSignedIn() && (resource.data.userId == request.auth.uid || isAdmin());
+      allow write: if isAdmin();
+    }
+
+    // Payments Collection (Server or Admin)
+    match /payments/{paymentId} {
+      allow read: if isSignedIn() && (resource.data.userId == request.auth.uid || isAdmin());
+      allow write: if isAdmin();
+    }
+
+    // Resources Collection
+    match /resources/{resourceId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    // Resource Progress Collection
+    match /resource_progress/{progressId} {
+      allow read: if isSignedIn() && (resource.data.userId == request.auth.uid || isAdmin());
+      allow create: if isSignedIn() && incoming().userId == request.auth.uid;
+      // Students can toggle bookmark, but completion & points are server managed
+      allow update: if isSignedIn() && (
+        (existing().userId == request.auth.uid && incoming().userId == request.auth.uid) || isAdmin()
+      );
+      allow delete: if isSignedIn() && (existing().userId == request.auth.uid || isAdmin());
+    }
+
+    // Resource Suggestions Collection
+    match /resource_suggestions/{suggestionId} {
+      allow read: if isSignedIn() && (resource.data.userId == request.auth.uid || isAdmin());
+      allow create: if isSignedIn() && incoming().userId == request.auth.uid;
+      allow update, delete: if isAdmin();
+    }
+
+    // Resource Reports Collection
+    match /resource_reports/{reportId} {
+      allow read: if isAdmin();
+      allow create: if isSignedIn() && incoming().userId == request.auth.uid;
+      allow update, delete: if isAdmin();
+    }
+
+    // Learning Paths Collection
+    match /learning_paths/{pathId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    // Components Cache
+    match /components_cache/{cacheId} {
+      allow read: if isSignedIn();
+      allow write: if isAdmin();
+    }
+
+    // Component Searches
+    match /component_searches/{searchId} {
+      allow read: if isSignedIn() && (resource.data.userId == request.auth.uid || isAdmin());
+      allow create: if isSignedIn() && incoming().userId == request.auth.uid;
+      allow write: if isAdmin();
+    }
+
+    // Activity Events
+    match /activity_events/{eventId} {
+      allow read: if isAdmin();
+      allow create: if isSignedIn() && incoming().userId == request.auth.uid;
+      allow write: if isAdmin();
+    }
+
+    // Daily Stats & Config
+    match /daily_stats/{dateId} {
+      allow read: if isAdmin();
+      allow write: if isAdmin();
+    }
+
+    match /config/{configDoc} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+  }
+}

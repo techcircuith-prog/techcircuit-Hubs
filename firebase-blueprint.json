@@ -1,0 +1,321 @@
+{
+  "entities": {
+    "User": {
+      "title": "User",
+      "description": "Student profile data",
+      "type": "object",
+      "properties": {
+        "role": { "type": "string", "enum": ["student", "admin"] },
+        "displayName": { "type": "string", "maxLength": 100 },
+        "email": { "type": "string", "maxLength": 150 },
+        "college": { "type": "string", "maxLength": 150 },
+        "year": { "type": "string", "maxLength": 20 },
+        "department": { "type": "string", "maxLength": 100 },
+        "phone": { "type": "string", "maxLength": 20 },
+        "interests": { "type": "string", "maxLength": 500 },
+        "collegeId": { "type": "string", "maxLength": 50 },
+        "onboarded": { "type": "string" },
+        "createdAt": { "type": "string" },
+        "lastLoginAt": { "type": "string" }
+      },
+      "required": ["role", "email"]
+    },
+    "Company": {
+      "title": "Company",
+      "description": "Tech & semiconductor employers",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string", "maxLength": 100 },
+        "logoUrl": { "type": "string", "maxLength": 500 },
+        "website": { "type": "string", "maxLength": 300 }
+      },
+      "required": ["name"]
+    },
+    "Skill": {
+      "title": "Skill",
+      "description": "ECE & VLSI core skills master",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string", "maxLength": 100 },
+        "category": { "type": "string", "maxLength": 100 }
+      },
+      "required": ["name", "category"]
+    },
+    "Opportunity": {
+      "title": "Opportunity",
+      "description": "Internship, training, or hackathon listing",
+      "type": "object",
+      "properties": {
+        "type": { "type": "string", "enum": ["internship", "training", "hackathon"] },
+        "title": { "type": "string", "maxLength": 150 },
+        "companyId": { "type": "string", "maxLength": 100 },
+        "companyName": { "type": "string", "maxLength": 100 },
+        "companyLogo": { "type": "string", "maxLength": 500 },
+        "description": { "type": "string", "maxLength": 3000 },
+        "location": { "type": "string", "maxLength": 100 },
+        "mode": { "type": "string", "maxLength": 50 },
+        "stipendOrFee": { "type": "string", "maxLength": 100 },
+        "deadline": { "type": "string" },
+        "applyLink": { "type": "string", "maxLength": 500 },
+        "status": { "type": "string", "enum": ["draft", "published"] },
+        "createdAt": { "type": "string" }
+      },
+      "required": ["type", "title", "status"]
+    },
+    "SavedItem": {
+      "title": "SavedItem",
+      "description": "Bookmarked opportunity or resource",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string", "maxLength": 100 },
+        "targetType": { "type": "string", "maxLength": 50 },
+        "targetId": { "type": "string", "maxLength": 100 },
+        "createdAt": { "type": "string" }
+      },
+      "required": ["userId", "targetId"]
+    },
+    "Application": {
+      "title": "Application",
+      "description": "Student opportunity application track record",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string", "maxLength": 100 },
+        "opportunityId": { "type": "string", "maxLength": 100 },
+        "status": { "type": "string", "enum": ["saved", "applied", "shortlisted", "completed"] },
+        "certificateUrl": { "type": "string", "maxLength": 500 },
+        "verified": { "type": "string" }
+      },
+      "required": ["userId", "opportunityId", "status"]
+    },
+    "StudentSkill": {
+      "title": "StudentSkill",
+      "description": "Calculated skill points per user and skill",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string", "maxLength": 100 },
+        "skillId": { "type": "string", "maxLength": 100 },
+        "skillName": { "type": "string", "maxLength": 100 },
+        "points": { "type": "string" },
+        "level": { "type": "string", "maxLength": 50 }
+      },
+      "required": ["userId", "skillId"]
+    },
+    "Badge": {
+      "title": "Badge",
+      "description": "Milestone badges earned by students",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string", "maxLength": 100 },
+        "badgeId": { "type": "string", "maxLength": 100 },
+        "title": { "type": "string", "maxLength": 100 },
+        "description": { "type": "string", "maxLength": 200 }
+      },
+      "required": ["userId", "badgeId", "title"]
+    },
+    "Project": {
+      "title": "Project",
+      "description": "Hardware/software kits and lab projects for purchase",
+      "type": "object",
+      "properties": {
+        "title": { "type": "string", "maxLength": 150 },
+        "description": { "type": "string", "maxLength": 3000 },
+        "price": { "type": "string" },
+        "type": { "type": "string", "enum": ["digital", "physical"] },
+        "stock": { "type": "string" },
+        "status": { "type": "string", "enum": ["draft", "published"] }
+      },
+      "required": ["title", "type", "status"]
+    },
+    "Cart": {
+      "title": "Cart",
+      "description": "Shopping cart per user",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string", "maxLength": 100 }
+      },
+      "required": ["userId"]
+    },
+    "Order": {
+      "title": "Order",
+      "description": "Orders for kits and digital packages",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string", "maxLength": 100 },
+        "status": { "type": "string", "enum": ["pending", "paid", "failed", "shipped", "delivered"] },
+        "amount": { "type": "string" }
+      },
+      "required": ["userId", "status"]
+    },
+    "Payment": {
+      "title": "Payment",
+      "description": "Cashfree transaction audit record",
+      "type": "object",
+      "properties": {
+        "orderId": { "type": "string", "maxLength": 100 },
+        "userId": { "type": "string", "maxLength": 100 },
+        "status": { "type": "string", "maxLength": 50 }
+      },
+      "required": ["orderId", "userId"]
+    },
+    "Resource": {
+      "title": "Resource",
+      "description": "Curated videos, playlists, datasheets, tools, notes",
+      "type": "object",
+      "properties": {
+        "type": { "type": "string", "maxLength": 50 },
+        "title": { "type": "string", "maxLength": 200 },
+        "url": { "type": "string", "maxLength": 500 },
+        "thumbnailUrl": { "type": "string", "maxLength": 500 },
+        "source": { "type": "string", "maxLength": 100 },
+        "category": { "type": "string", "maxLength": 100 },
+        "level": { "type": "string", "maxLength": 50 },
+        "language": { "type": "string", "maxLength": 50 },
+        "status": { "type": "string", "enum": ["draft", "published"] }
+      },
+      "required": ["title", "url", "category", "status"]
+    },
+    "ResourceProgress": {
+      "title": "ResourceProgress",
+      "description": "Student bookmarking and completion of learning resources",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string", "maxLength": 100 },
+        "resourceId": { "type": "string", "maxLength": 100 }
+      },
+      "required": ["userId", "resourceId"]
+    },
+    "ResourceSuggestion": {
+      "title": "ResourceSuggestion",
+      "description": "Student-submitted resource recommendation for review",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string", "maxLength": 100 },
+        "url": { "type": "string", "maxLength": 500 },
+        "category": { "type": "string", "maxLength": 100 },
+        "note": { "type": "string", "maxLength": 500 },
+        "status": { "type": "string", "enum": ["pending", "approved", "rejected"] }
+      },
+      "required": ["userId", "url", "category"]
+    },
+    "ResourceReport": {
+      "title": "ResourceReport",
+      "description": "Broken link report",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string", "maxLength": 100 },
+        "resourceId": { "type": "string", "maxLength": 100 },
+        "reason": { "type": "string", "maxLength": 500 }
+      },
+      "required": ["userId", "resourceId"]
+    },
+    "LearningPath": {
+      "title": "LearningPath",
+      "description": "Curated sequential syllabus of resources",
+      "type": "object",
+      "properties": {
+        "title": { "type": "string", "maxLength": 150 },
+        "level": { "type": "string", "maxLength": 50 },
+        "status": { "type": "string", "enum": ["draft", "published"] }
+      },
+      "required": ["title", "status"]
+    },
+    "ComponentSearch": {
+      "title": "ComponentSearch",
+      "description": "Nexar supply query log",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string", "maxLength": 100 },
+        "query": { "type": "string", "maxLength": 100 }
+      },
+      "required": ["userId", "query"]
+    },
+    "ActivityEvent": {
+      "title": "ActivityEvent",
+      "description": "Key user interaction log with TTL",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string", "maxLength": 100 },
+        "eventType": { "type": "string", "maxLength": 50 }
+      },
+      "required": ["userId", "eventType"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": "User",
+      "description": "Student profile data"
+    },
+    "/companies/{companyId}": {
+      "schema": "Company",
+      "description": "Companies and recruiters"
+    },
+    "/skills/{skillId}": {
+      "schema": "Skill",
+      "description": "ECE and VLSI skills master list"
+    },
+    "/opportunities/{opportunityId}": {
+      "schema": "Opportunity",
+      "description": "Internships, trainings, hackathons"
+    },
+    "/saved_items/{savedId}": {
+      "schema": "SavedItem",
+      "description": "User bookmarked opportunities"
+    },
+    "/applications/{applicationId}": {
+      "schema": "Application",
+      "description": "Student applications and status"
+    },
+    "/student_skills/{studentSkillId}": {
+      "schema": "StudentSkill",
+      "description": "Student points and skill mastery"
+    },
+    "/badges/{badgeId}": {
+      "schema": "Badge",
+      "description": "Milestone badges"
+    },
+    "/projects/{projectId}": {
+      "schema": "Project",
+      "description": "Lab kits and digital project packages"
+    },
+    "/cart/{cartId}": {
+      "schema": "Cart",
+      "description": "User shopping carts"
+    },
+    "/orders/{orderId}": {
+      "schema": "Order",
+      "description": "Order records"
+    },
+    "/payments/{paymentId}": {
+      "schema": "Payment",
+      "description": "Cashfree transaction history"
+    },
+    "/resources/{resourceId}": {
+      "schema": "Resource",
+      "description": "Learning resources"
+    },
+    "/resource_progress/{progressId}": {
+      "schema": "ResourceProgress",
+      "description": "User resource bookmark and completion states"
+    },
+    "/resource_suggestions/{suggestionId}": {
+      "schema": "ResourceSuggestion",
+      "description": "Student resource recommendations"
+    },
+    "/resource_reports/{reportId}": {
+      "schema": "ResourceReport",
+      "description": "Dead link reports"
+    },
+    "/learning_paths/{pathId}": {
+      "schema": "LearningPath",
+      "description": "Structured curriculum roadmap"
+    },
+    "/component_searches/{searchId}": {
+      "schema": "ComponentSearch",
+      "description": "Supply search logs"
+    },
+    "/activity_events/{eventId}": {
+      "schema": "ActivityEvent",
+      "description": "Audit & engagement telemetry"
+    }
+  }
+}

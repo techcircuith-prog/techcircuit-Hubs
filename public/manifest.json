@@ -1,0 +1,17 @@
+{
+  "name": "techcircuithub",
+  "short_name": "CircuitHub",
+  "description": "Premier SaaS platform for ECE, VLSI & ACT engineering students in India",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#f97316",
+  "icons": [
+    {
+      "src": "/ece-logo.png",
+      "sizes": "1599x682",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ]
+}

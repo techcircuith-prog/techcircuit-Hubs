@@ -1,0 +1,176 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1920 1080" width="100%" height="100%" preserveAspectRatio="xMidYMid slice">
+  <defs>
+    <!-- Gradients -->
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0f172a" />
+      <stop offset="40%" stop-color="#1e293b" />
+      <stop offset="80%" stop-color="#0f172a" />
+      <stop offset="100%" stop-color="#020617" />
+    </linearGradient>
+
+    <linearGradient id="circuitGradOrange" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#ea580c" stop-opacity="0.8" />
+      <stop offset="50%" stop-color="#f59e0b" stop-opacity="0.9" />
+      <stop offset="100%" stop-color="#ea580c" stop-opacity="0.6" />
+    </linearGradient>
+
+    <linearGradient id="circuitGradCyan" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#06b6d4" stop-opacity="0.7" />
+      <stop offset="100%" stop-color="#3b82f6" stop-opacity="0.4" />
+    </linearGradient>
+
+    <linearGradient id="chipGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#1e293b" />
+      <stop offset="100%" stop-color="#090d16" />
+    </linearGradient>
+
+    <radialGradient id="glowGradiant1" cx="50%" cy="30%" r="50%">
+      <stop offset="0%" stop-color="#ea580c" stop-opacity="0.25" />
+      <stop offset="60%" stop-color="#f59e0b" stop-opacity="0.08" />
+      <stop offset="100%" stop-color="#0f172a" stop-opacity="0" />
+    </radialGradient>
+
+    <radialGradient id="glowGradiant2" cx="80%" cy="70%" r="40%">
+      <stop offset="0%" stop-color="#0284c7" stop-opacity="0.2" />
+      <stop offset="100%" stop-color="#0f172a" stop-opacity="0" />
+    </radialGradient>
+
+    <!-- Pattern: Tech Grid -->
+    <pattern id="gridPattern" width="60" height="60" patternUnits="userSpaceOnUse">
+      <path d="M 60 0 L 0 0 0 60" fill="none" stroke="#334155" stroke-width="0.75" stroke-opacity="0.4" />
+      <circle cx="0" cy="0" r="1.5" fill="#f59e0b" fill-opacity="0.5" />
+      <circle cx="60" cy="60" r="1" fill="#38bdf8" fill-opacity="0.4" />
+    </pattern>
+  </defs>
+
+  <!-- Deep Background Layer -->
+  <rect width="1920" height="1080" fill="url(#bgGrad)" />
+
+  <!-- Ambient Glows -->
+  <rect width="1920" height="1080" fill="url(#glowGradiant1)" />
+  <rect width="1920" height="1080" fill="url(#glowGradiant2)" />
+
+  <!-- Grid Blueprint Overlay -->
+  <rect width="1920" height="1080" fill="url(#gridPattern)" />
+
+  <!-- Central Processor / FPGA Core Silicon Graphic -->
+  <g transform="translate(960, 500) scale(1.1)">
+    <!-- Outer IC Pins -->
+    <g stroke="#f97316" stroke-width="2" stroke-opacity="0.4">
+      <!-- Top pins -->
+      <line x1="-120" y1="-160" x2="-120" y2="-190" />
+      <line x1="-80" y1="-160" x2="-80" y2="-190" />
+      <line x1="-40" y1="-160" x2="-40" y2="-190" />
+      <line x1="0" y1="-160" x2="0" y2="-190" />
+      <line x1="40" y1="-160" x2="40" y2="-190" />
+      <line x1="80" y1="-160" x2="80" y2="-190" />
+      <line x1="120" y1="-160" x2="120" y2="-190" />
+      <!-- Bottom pins -->
+      <line x1="-120" y1="160" x2="-120" y2="190" />
+      <line x1="-80" y1="160" x2="-80" y2="190" />
+      <line x1="-40" y1="160" x2="-40" y2="190" />
+      <line x1="0" y1="160" x2="0" y2="190" />
+      <line x1="40" y1="160" x2="40" y2="190" />
+      <line x1="80" y1="160" x2="80" y2="190" />
+      <line x1="120" y1="160" x2="120" y2="190" />
+      <!-- Left pins -->
+      <line x1="-160" y1="-120" x2="-190" y2="-120" />
+      <line x1="-160" y1="-80" x2="-190" y2="-80" />
+      <line x1="-160" y1="-40" x2="-190" y2="-40" />
+      <line x1="-160" y1="0" x2="-190" y2="0" />
+      <line x1="-160" y1="40" x2="-190" y2="40" />
+      <line x1="-160" y1="80" x2="-190" y2="80" />
+      <line x1="-160" y1="120" x2="-190" y2="120" />
+      <!-- Right pins -->
+      <line x1="160" y1="-120" x2="190" y2="-120" />
+      <line x1="160" y1="-80" x2="190" y2="-80" />
+      <line x1="160" y1="-40" x2="190" y2="-40" />
+      <line x1="160" y1="0" x2="190" y2="0" />
+      <line x1="160" y1="40" x2="190" y2="40" />
+      <line x1="160" y1="80" x2="190" y2="80" />
+      <line x1="160" y1="120" x2="190" y2="120" />
+    </g>
+
+    <!-- Main IC Package -->
+    <rect x="-160" y="-160" width="320" height="320" rx="16" fill="url(#chipGrad)" stroke="#f59e0b" stroke-width="2.5" stroke-opacity="0.7" />
+    
+    <!-- Die Inner Heat Spreader -->
+    <rect x="-110" y="-110" width="220" height="220" rx="8" fill="#0b1120" stroke="#0284c7" stroke-width="1.5" stroke-opacity="0.6" />
+    
+    <!-- Silicon Die Core -->
+    <rect x="-60" y="-60" width="120" height="120" rx="4" fill="#030712" stroke="#ea580c" stroke-width="2" stroke-opacity="0.85" />
+    <circle cx="0" cy="0" r="28" fill="#ea580c" fill-opacity="0.1" stroke="#fbbf24" stroke-width="1.5" stroke-dasharray="4 3" />
+    
+    <!-- ECE Core Micro-Label -->
+    <text x="0" y="5" font-family="'JetBrains Mono', monospace" font-size="14" font-weight="bold" fill="#f97316" text-anchor="middle" letter-spacing="2">ECE-CORE</text>
+    <text x="0" y="-80" font-family="'JetBrains Mono', monospace" font-size="9" fill="#94a3b8" text-anchor="middle" letter-spacing="1">ARM CORTEX / RISC-V</text>
+    <text x="0" y="90" font-family="'JetBrains Mono', monospace" font-size="9" fill="#38bdf8" text-anchor="middle" letter-spacing="1">VLSI 28nm TAPE-OUT</text>
+  </g>
+
+  <!-- Left Circuit Traces & Bus Routing -->
+  <g stroke="url(#circuitGradOrange)" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M 100 200 L 350 200 L 480 330 L 680 330 L 770 420 L 820 420" opacity="0.65" />
+    <path d="M 50 380 L 260 380 L 360 480 L 590 480 L 660 550 L 820 550" opacity="0.75" />
+    <path d="M 120 560 L 300 560 L 420 680 L 720 680 L 820 580" opacity="0.6" />
+    <path d="M 80 820 L 400 820 L 540 680 L 700 680" opacity="0.5" />
+    <path d="M 220 920 L 500 920 L 650 770 L 780 770" opacity="0.55" />
+  </g>
+
+  <!-- Right Circuit Traces & High-Speed Data Buses -->
+  <g stroke="url(#circuitGradCyan)" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M 1820 180 L 1580 180 L 1420 340 L 1220 340 L 1120 440" opacity="0.7" />
+    <path d="M 1870 340 L 1650 340 L 1500 490 L 1300 490 L 1140 530" opacity="0.8" />
+    <path d="M 1790 520 L 1540 520 L 1380 680 L 1200 680 L 1140 610" opacity="0.65" />
+    <path d="M 1840 760 L 1520 760 L 1360 600 L 1150 600" opacity="0.6" />
+    <path d="M 1700 950 L 1400 950 L 1250 800 L 1120 800" opacity="0.5" />
+  </g>
+
+  <!-- Circuit Vias / Test Points / Solder Pads -->
+  <g fill="#fbbf24" stroke="#78350f" stroke-width="1.5">
+    <circle cx="100" cy="200" r="5" />
+    <circle cx="350" cy="200" r="4" />
+    <circle cx="480" cy="330" r="4" />
+    <circle cx="50" cy="380" r="5" />
+    <circle cx="360" cy="480" r="4.5" />
+    <circle cx="590" cy="480" r="4" />
+    <circle cx="120" cy="560" r="5" />
+    <circle cx="420" cy="680" r="4" />
+    <circle cx="80" cy="820" r="5" />
+    <circle cx="220" cy="920" r="5" />
+  </g>
+
+  <g fill="#38bdf8" stroke="#0369a1" stroke-width="1.5">
+    <circle cx="1820" cy="180" r="5" />
+    <circle cx="1580" cy="180" r="4" />
+    <circle cx="1420" cy="340" r="4" />
+    <circle cx="1870" cy="340" r="5" />
+    <circle cx="1500" cy="490" r="4.5" />
+    <circle cx="1790" cy="520" r="5" />
+    <circle cx="1380" cy="680" r="4" />
+    <circle cx="1840" cy="760" r="5" />
+    <circle cx="1700" cy="950" r="5" />
+  </g>
+
+  <!-- Frequency RF Carrier & Signal Waveforms -->
+  <g opacity="0.45">
+    <!-- Sine waves on bottom left -->
+    <path d="M 60 700 Q 110 660, 160 700 T 260 700 T 360 700 T 460 700 T 560 700" fill="none" stroke="#f59e0b" stroke-width="2" />
+    <path d="M 60 720 Q 110 690, 160 720 T 260 720 T 360 720 T 460 720 T 560 720" fill="none" stroke="#0ea5e9" stroke-width="1.5" stroke-dasharray="3 3" />
+    <!-- Square wave on top right -->
+    <path d="M 1350 120 L 1400 120 L 1400 80 L 1450 80 L 1450 120 L 1500 120 L 1500 80 L 1550 80 L 1550 120 L 1600 120 L 1600 80 L 1650 80 L 1650 120" fill="none" stroke="#38bdf8" stroke-width="1.5" />
+  </g>
+
+  <!-- Technical Spec Watermarks / Schematics text -->
+  <g font-family="'JetBrains Mono', monospace" font-size="11" fill="#64748b" opacity="0.55">
+    <text x="80" y="140">VCC = +3.3V [STABLE]</text>
+    <text x="80" y="160">CLK = 120.00 MHz (PLL SYNC)</text>
+    <text x="80" y="660">RF BAND = 2.4 GHz ISM / BLE 5.3</text>
+    
+    <text x="1620" y="100">BUS: AXI4 / APB4 INTERCONNECT</text>
+    <text x="1620" y="120">SAMPLING: 16-BIT 200 MSPS ADC</text>
+    <text x="1620" y="700">PROTOCOLS: SPI / I2C / UART / CAN-FD</text>
+  </g>
+
+  <!-- Subtle Vignette / Edge Softening -->
+  <rect width="1920" height="1080" fill="none" stroke="#020617" stroke-width="80" opacity="0.3" />
+</svg>
