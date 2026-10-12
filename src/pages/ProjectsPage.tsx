@@ -3,6 +3,7 @@ import { Link, useSearchParams } from 'react-router-dom';
 import { useData } from '../context/DataContext';
 import { useAuth } from '../context/AuthContext';
 import { Project } from '../types';
+import { ProjectImage } from '../components/common/ProjectImage';
 import { 
   Cpu, 
   ShoppingCart, 
@@ -321,7 +322,6 @@ export const ProjectsPage: React.FC = () => {
           <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-3 gap-2.5 sm:gap-6">
             {filteredProjects.map((proj, idx) => {
               const isJustAdded = addedId === proj.id;
-              const code = getProjectCode(proj, idx);
               const category = getProjectCategory(proj, idx);
 
               return (
@@ -331,27 +331,11 @@ export const ProjectsPage: React.FC = () => {
                 >
                   <div>
                     {/* Image Cover */}
-                    <div className="h-28 sm:h-48 bg-gradient-to-br from-slate-900 via-stone-900 to-slate-950 relative overflow-hidden flex items-center justify-center">
-                      <div className="flex flex-col items-center justify-center text-slate-500 gap-1 select-none pointer-events-none">
-                        <Cpu className="w-8 h-8 sm:w-10 sm:h-10 text-orange-500/40" />
-                        <span className="text-[10px] font-mono text-slate-400 font-semibold">{code}</span>
-                      </div>
-                      <img
-                        src={proj.images[0]}
-                        alt={proj.title}
-                        className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                        onError={(e) => {
-                          e.currentTarget.onerror = null;
-                          e.currentTarget.style.display = 'none';
-                        }}
-                      />
-                      
-                      {/* Top Badges */}
-                      <div className="absolute top-2 left-2 flex items-center gap-1 z-10">
-                        <span className="px-1.5 py-0.5 rounded text-[9px] sm:text-[10px] font-mono font-bold uppercase bg-slate-950/90 text-orange-400 border border-orange-500/30 shadow-2xs backdrop-blur-sm">
-                          {code}
-                        </span>
-                      </div>
+                    <ProjectImage
+                      project={proj}
+                      className="h-28 sm:h-48"
+                      imageClassName="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                    >
 
                       {/* Stock Pill on Top Right */}
                       <div className="absolute top-2 right-2 z-10">
@@ -366,13 +350,11 @@ export const ProjectsPage: React.FC = () => {
                           {category}
                         </span>
                       </div>
-                    </div>
+                    </ProjectImage>
 
                     {/* Content */}
                     <div className="p-3 sm:p-5">
-                      <div className="flex items-center gap-1.5 text-[9px] sm:text-[10px] font-mono text-orange-600 font-bold mb-1">
-                        <span>{code}</span>
-                        <span>•</span>
+                      <div className="flex items-center gap-1.5 text-[9px] sm:text-[10px] font-semibold text-orange-700 mb-1">
                         <span className="truncate">{category}</span>
                       </div>
 
@@ -446,22 +428,22 @@ export const ProjectsPage: React.FC = () => {
         <div className="space-y-8 animate-fadeIn">
           
           {/* Hero Banner for Custom Projects */}
-          <div className="relative bg-gradient-to-br from-slate-950 via-stone-900 to-slate-900 text-white rounded-3xl p-6 sm:p-10 border border-orange-500/30 shadow-xl overflow-hidden">
+          <div className="relative bg-gradient-to-br from-white via-orange-50 to-white text-slate-900 rounded-3xl p-6 sm:p-10 border border-orange-200 shadow-sm overflow-hidden">
             {/* Background PCB Accents */}
-            <div className="absolute top-0 right-0 w-96 h-96 bg-orange-500/10 rounded-full blur-3xl pointer-events-none -mr-20 -mt-20"></div>
-            <div className="absolute bottom-0 left-1/3 w-80 h-80 bg-amber-500/10 rounded-full blur-3xl pointer-events-none"></div>
+            <div className="absolute top-0 right-0 w-96 h-96 bg-orange-200/40 rounded-full blur-3xl pointer-events-none -mr-20 -mt-20"></div>
+            <div className="absolute bottom-0 left-1/3 w-80 h-80 bg-amber-200/30 rounded-full blur-3xl pointer-events-none"></div>
 
             <div className="relative z-10 max-w-3xl space-y-4">
-              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-orange-500/20 border border-orange-500/40 text-orange-400 text-xs font-mono font-semibold">
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-orange-100 border border-orange-200 text-orange-800 text-xs font-mono font-semibold">
                 <Wrench className="w-3.5 h-3.5" />
                 <span>ECE HARDWARE & EMBEDDED CUSTOM LAB</span>
               </div>
 
-              <h2 className="text-2xl sm:text-4xl font-extrabold tracking-tight text-white leading-tight">
+              <h2 className="text-2xl sm:text-4xl font-extrabold tracking-tight text-slate-950 leading-tight">
                 Custom ECE Projects Built Exactly to Your Idea & College Requirements
               </h2>
 
-              <p className="text-xs sm:text-base text-slate-300 leading-relaxed">
+              <p className="text-xs sm:text-base text-slate-600 leading-relaxed">
                 Have a unique project idea, a specific problem statement, or strict university guidelines? 
                 Our hardware engineers design custom double-sided PCBs, integrate microcontrollers & sensors, 
                 program firmware, and provide complete documentation & viva defense preparation.
@@ -608,37 +590,37 @@ export const ProjectsPage: React.FC = () => {
                   domain: 'Robotics & Automation',
                   tech: 'Autonomous rovers, LiDAR navigation, ROS, Robotic arms',
                   icon: Bot,
-                  color: 'text-blue-600 bg-blue-50 border-blue-200'
+                  color: 'text-orange-600 bg-orange-50 border-orange-200'
                 },
                 {
                   domain: 'VLSI & Digital Systems',
                   tech: 'Xilinx Vivado, Verilog / VHDL, Spartan/Artix FPGAs',
                   icon: Cpu,
-                  color: 'text-purple-600 bg-purple-50 border-purple-200'
+                  color: 'text-orange-600 bg-orange-50 border-orange-200'
                 },
                 {
                   domain: 'Biomedical Electronics',
                   tech: 'ECG/EMG telemetry, Patient vital sensors, Wearables',
                   icon: Activity,
-                  color: 'text-rose-600 bg-rose-50 border-rose-200'
+                  color: 'text-orange-600 bg-orange-50 border-orange-200'
                 },
                 {
                   domain: 'Edge AI & TinyML',
                   tech: 'Edge Impulse, OpenCV on Raspberry Pi / Jetson Nano',
                   icon: Sparkles,
-                  color: 'text-emerald-600 bg-emerald-50 border-emerald-200'
+                  color: 'text-orange-600 bg-orange-50 border-orange-200'
                 },
                 {
                   domain: 'Electric Vehicles (EV)',
                   tech: 'BLDC motor drivers, CAN bus telemetry, Regenerative braking',
                   icon: CircuitBoard,
-                  color: 'text-indigo-600 bg-indigo-50 border-indigo-200'
+                  color: 'text-orange-600 bg-orange-50 border-orange-200'
                 },
                 {
                   domain: 'Industrial Embedded Systems',
                   tech: 'RS-485 Modbus, PLC interfacing, High-voltage isolation',
                   icon: Layers,
-                  color: 'text-slate-600 bg-slate-50 border-slate-200'
+                  color: 'text-orange-600 bg-orange-50 border-orange-200'
                 },
               ].map((cat) => {
                 const Icon = cat.icon;
@@ -658,13 +640,13 @@ export const ProjectsPage: React.FC = () => {
           </div>
 
           {/* What is Included in Every Custom Project Package */}
-          <div className="bg-stone-900 text-white rounded-3xl p-6 sm:p-8 border border-stone-800 shadow-md space-y-6">
+          <div className="bg-white text-slate-900 rounded-3xl p-6 sm:p-8 border border-orange-100 shadow-sm space-y-6">
             <div>
-              <span className="text-xs font-mono font-bold uppercase text-orange-400">Complete Deliverables</span>
-              <h3 className="text-lg sm:text-2xl font-extrabold text-white tracking-tight mt-0.5">
+              <span className="text-xs font-mono font-bold uppercase text-orange-700">Complete Deliverables</span>
+              <h3 className="text-lg sm:text-2xl font-extrabold text-slate-950 tracking-tight mt-0.5">
                 What You Receive with Your Custom Project
               </h3>
-              <p className="text-xs sm:text-sm text-slate-400 mt-1">
+              <p className="text-xs sm:text-sm text-slate-600 mt-1">
                 Every custom project comes with a comprehensive package ready for university submission:
               </p>
             </div>
@@ -706,7 +688,7 @@ export const ProjectsPage: React.FC = () => {
                 target="_blank"
                 rel="noopener noreferrer"
                 onClick={handleGoogleFormClick}
-                className="w-full sm:w-auto inline-flex items-center justify-center gap-2.5 px-6 py-3.5 rounded-xl bg-slate-950 hover:bg-slate-900 active:scale-95 text-white font-mono font-bold text-sm shadow-md transition-all cursor-pointer"
+                className="w-full sm:w-auto inline-flex items-center justify-center gap-2.5 px-6 py-3.5 rounded-xl bg-orange-600 hover:bg-orange-700 active:scale-95 text-white font-mono font-bold text-sm shadow-md transition-all cursor-pointer"
               >
                 <FileText className="w-4 h-4 text-orange-400" />
                 <span>Fill the Google Form</span>

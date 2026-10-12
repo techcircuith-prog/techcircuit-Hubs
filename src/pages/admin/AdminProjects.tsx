@@ -166,7 +166,7 @@ export const AdminProjects: React.FC = () => {
                     onChange={(e) => setEditingProj({ ...editingProj, type: e.target.value as any })}
                     className="w-full px-3 py-2 bg-stone-50 border border-stone-200 rounded-lg text-slate-800 outline-none focus:border-orange-500"
                   >
-                    <option value="physical">Physical Kit</option>
+                    <option value="physical">Physical Project</option>
                     <option value="digital">Digital Package</option>
                   </select>
                 </div>

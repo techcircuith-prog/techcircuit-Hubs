@@ -3,6 +3,7 @@ import {
   getAuth, 
   GoogleAuthProvider, 
   signInWithPopup, 
+  signInWithRedirect,
   signOut as fbSignOut,
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
@@ -82,8 +83,17 @@ export function handleFirestoreError(error: unknown, operationType: OperationTyp
 export async function loginWithGoogle() {
   try {
     const result = await signInWithPopup(auth, googleProvider);
-    return result.user;
+    return { user: result.user, redirecting: false as const };
   } catch (error) {
+    const authError = error as { code?: string };
+    if (
+      authError.code === 'auth/popup-blocked' ||
+      authError.code === 'auth/operation-not-supported-in-this-environment'
+    ) {
+      await signInWithRedirect(auth, googleProvider);
+      return { user: null, redirecting: true as const };
+    }
+
     console.error('Google Sign In Error:', error);
     throw error;
   }

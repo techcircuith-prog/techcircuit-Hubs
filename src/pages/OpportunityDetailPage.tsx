@@ -26,6 +26,7 @@ export const OpportunityDetailPage: React.FC = () => {
 
   const opp = useMemo(() => opportunities.find((o) => o.id === id) || null, [id, opportunities]);
   const [showApplyModal, setShowApplyModal] = useState(false);
+  const [applyNotice, setApplyNotice] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
 
   const daysRemaining = useMemo(() => {
     if (!opp) return 0;
@@ -52,14 +53,25 @@ export const OpportunityDetailPage: React.FC = () => {
       return;
     }
 
-    // 1. Record apply click
-    await recordApplyClick(opp);
+    setApplyNotice(null);
+    try {
+      await recordApplyClick(opp);
+      window.open(opp.applyLink, '_blank', 'noopener,noreferrer');
+      setShowApplyModal(true);
+    } catch (error) {
+      console.error('Failed to start opportunity application:', error);
+      setApplyNotice({ type: 'error', message: 'Could not open the application flow. Please try again.' });
+    }
+  };
 
-    // 2. Open external apply link
-    window.open(opp.applyLink, '_blank', 'noopener,noreferrer');
-
-    // 3. Prompt return modal
-    setShowApplyModal(true);
+  const handleConfirmApplied = async () => {
+    try {
+      await confirmApplied(opp.id);
+      setApplyNotice({ type: 'success', message: 'Application saved to your Student Activity tracker.' });
+    } catch (error) {
+      console.error('Failed to save opportunity application:', error);
+      setApplyNotice({ type: 'error', message: 'We could not save your application. Please try again.' });
+    }
   };
 
   return (
@@ -181,12 +193,26 @@ export const OpportunityDetailPage: React.FC = () => {
 
       </div>
 
+      {applyNotice && (
+        <div
+          role={applyNotice.type === 'success' ? 'status' : 'alert'}
+          className={`mt-4 rounded-xl border p-4 text-sm flex items-start gap-2 ${
+            applyNotice.type === 'success'
+              ? 'bg-emerald-50 border-emerald-200 text-emerald-800'
+              : 'bg-rose-50 border-rose-200 text-rose-700'
+          }`}
+        >
+          <CheckCircle2 className="w-5 h-5 shrink-0" />
+          <span>{applyNotice.message}</span>
+        </div>
+      )}
+
       {/* Confirmation Modal */}
       <ApplyConfirmModal
         opportunity={opp}
         isOpen={showApplyModal}
         onClose={() => setShowApplyModal(false)}
-        onConfirmApplied={() => confirmApplied(opp.id)}
+        onConfirmApplied={handleConfirmApplied}
       />
 
     </div>

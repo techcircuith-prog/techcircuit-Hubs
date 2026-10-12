@@ -1,9 +1,13 @@
 @import "tailwindcss";
 
 @layer base {
+  html {
+    scroll-behavior: smooth;
+  }
+
   body {
-    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-    background-color: #fafaf9;
+    font-family: 'Outfit', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background-color: #fffaf5;
     color: #0f172a;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
@@ -17,55 +21,69 @@
   code, pre, .font-mono {
     font-family: 'JetBrains Mono', 'Fira Code', monospace;
   }
+
+  button, a, input, select, textarea {
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  input, select, textarea {
+    font-size: 16px;
+  }
+
+  @media (min-width: 640px) {
+    input, select, textarea {
+      font-size: inherit;
+    }
+  }
 }
 
 /* PCB Circuit Trace Background (Static, Clean, No moving animations) */
 .bg-pcb-grid {
-  background-color: #fafaf9;
+  background-color: #fffaf5;
   background-image: 
-    radial-gradient(rgba(249, 115, 22, 0.1) 1px, transparent 1px),
-    linear-gradient(to right, rgba(249, 115, 22, 0.03) 1px, transparent 1px),
-    linear-gradient(to bottom, rgba(234, 88, 12, 0.03) 1px, transparent 1px);
-  background-size: 24px 24px, 48px 48px, 48px 48px;
+    radial-gradient(rgba(234, 88, 12, 0.06) 1px, transparent 1px),
+    linear-gradient(to right, rgba(234, 88, 12, 0.018) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(234, 88, 12, 0.018) 1px, transparent 1px);
+  background-size: 28px 28px, 56px 56px, 56px 56px;
   background-position: 0 0, 0 0, 0 0;
 }
 
 /* Microchip Card (Clean, Modern, Static) */
 .chip-border {
-  border: 1px solid rgba(226, 232, 240, 0.9);
-  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.04), 0 1px 2px -1px rgba(0, 0, 0, 0.02);
+  border: 1px solid rgba(241, 226, 213, 0.95);
+  box-shadow: 0 2px 8px 0 rgba(91, 52, 25, 0.04), 0 1px 2px -1px rgba(91, 52, 25, 0.03);
+  transition: border-color 180ms ease, box-shadow 180ms ease, transform 180ms ease;
 }
 
 .chip-border:hover {
-  border-color: rgba(249, 115, 22, 0.4);
-  box-shadow: 0 4px 12px -2px rgba(249, 115, 22, 0.08);
+  border-color: rgba(234, 88, 12, 0.35);
+  box-shadow: 0 12px 28px -14px rgba(194, 65, 12, 0.22);
+  transform: translateY(-2px);
 }
 
 .chip-border-active {
-  border: 1px solid rgba(234, 88, 12, 0.6);
-  box-shadow: 0 0 16px -2px rgba(249, 115, 22, 0.15);
+  border: 1px solid rgba(234, 88, 12, 0.55);
+  box-shadow: 0 0 16px -2px rgba(234, 88, 12, 0.15);
 }
 
-/* Static clean glow */
 .glow-orange {
   text-shadow: 0 0 10px rgba(249, 115, 22, 0.4);
 }
 
-/* Remove scrollbars everywhere while maintaining full scrollability */
-html, body, #root, * {
-  scrollbar-width: none !important; /* Firefox */
-  -ms-overflow-style: none !important; /* IE & Edge */
+@keyframes enter-soft {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
-/* Chrome, Safari, Edge, Opera */
-*::-webkit-scrollbar {
-  display: none !important;
-  width: 0 !important;
-  height: 0 !important;
+.animate-enter-soft {
+  animation: enter-soft 420ms ease-out both;
 }
 
-::-webkit-scrollbar {
-  display: none !important;
-  width: 0 !important;
-  height: 0 !important;
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    scroll-behavior: auto !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
 }

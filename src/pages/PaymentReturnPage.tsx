@@ -12,17 +12,22 @@ import {
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { OscilloscopeLoader } from '../components/common/LoadingSkeleton';
+import { useAuth } from '../context/AuthContext';
 
 export const PaymentReturnPage: React.FC = () => {
+  const { clearCart } = useAuth();
   const [searchParams] = useSearchParams();
   const orderId = searchParams.get('order_id') || '';
 
   const [loading, setLoading] = useState(true);
-  const [status, setStatus] = useState<'paid' | 'pending' | 'failed'>('paid');
+  const [status, setStatus] = useState<'paid' | 'pending' | 'failed' | 'error'>('pending');
+  const [verificationError, setVerificationError] = useState<string | null>(null);
   const [downloadUrl, setDownloadUrl] = useState<string | null>(null);
 
   useEffect(() => {
     if (!orderId) {
+      setStatus('error');
+      setVerificationError('The order reference is missing, so we could not verify this payment.');
       setLoading(false);
       return;
     }
@@ -31,9 +36,13 @@ export const PaymentReturnPage: React.FC = () => {
       try {
         const res = await fetch(`/api/orders/${orderId}/verify`, { method: 'POST' });
         const data = await res.json();
+        if (!res.ok) {
+          throw new Error(data.error || 'Could not verify your payment. Please try again later.');
+        }
         
         if (data.isPaid || data.status === 'paid') {
           setStatus('paid');
+          clearCart();
           // Trigger confetti
           try {
             confetti({
@@ -51,11 +60,12 @@ export const PaymentReturnPage: React.FC = () => {
             setDownloadUrl(tokenData.downloadUrl);
           }
         } else {
-          setStatus('pending');
+          setStatus(data.status === 'failed' || data.status === 'cancelled' ? 'failed' : 'pending');
         }
       } catch (err) {
         console.error(err);
-        setStatus('paid'); // Fallback in sandbox simulation
+        setStatus('error');
+        setVerificationError(err instanceof Error ? err.message : 'Could not verify your payment. Please try again later.');
       } finally {
         setLoading(false);
       }
@@ -67,7 +77,7 @@ export const PaymentReturnPage: React.FC = () => {
   if (loading) {
     return (
       <div className="min-h-screen bg-pcb-grid flex items-center justify-center">
-        <OscilloscopeLoader message="Verifying Cashfree payment session..." />
+        <OscilloscopeLoader message="Verifying your payment..." />
       </div>
     );
   }
@@ -100,7 +110,7 @@ export const PaymentReturnPage: React.FC = () => {
               </div>
               <div className="flex justify-between">
                 <span className="text-slate-500">Gateway:</span>
-                <span className="text-orange-600 font-semibold">Cashfree Sandbox / Production</span>
+                <span className="text-orange-600 font-semibold">Secure payment provider</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-slate-500">Skill XP Bonus:</span>
@@ -152,13 +162,41 @@ export const PaymentReturnPage: React.FC = () => {
             </div>
             <h1 className="text-xl font-bold text-slate-950 font-mono">Payment Status Pending</h1>
             <p className="text-xs text-slate-500">
-              We are waiting for Cashfree gateway confirmation. Your order status will update automatically once verified.
+              We are waiting for payment confirmation. Your order status will update automatically once verified.
             </p>
             <Link
               to="/dashboard"
               className="inline-block px-6 py-2.5 rounded-xl bg-orange-500 text-xs font-bold text-white hover:bg-orange-600"
             >
               View Orders in Dashboard
+            </Link>
+          </>
+        )}
+
+        {status === 'failed' && (
+          <>
+            <div className="w-16 h-16 rounded-2xl bg-rose-50 border border-rose-200 flex items-center justify-center text-rose-600 mx-auto">
+              <AlertCircle className="w-9 h-9" />
+            </div>
+            <h1 className="text-xl font-bold text-slate-950">Payment Not Completed</h1>
+            <p className="text-xs text-slate-500">Your order has not been marked as paid. You can return to the projects page and try again.</p>
+            <Link to="/projects" className="inline-block px-6 py-2.5 rounded-xl bg-orange-500 text-xs font-bold text-white hover:bg-orange-600">
+              Return to Projects
+            </Link>
+          </>
+        )}
+
+        {status === 'error' && (
+          <>
+            <div className="w-16 h-16 rounded-2xl bg-rose-50 border border-rose-200 flex items-center justify-center text-rose-600 mx-auto">
+              <AlertCircle className="w-9 h-9" />
+            </div>
+            <h1 className="text-xl font-bold text-slate-950">Payment Verification Unavailable</h1>
+            <p role="alert" className="text-xs text-slate-500">
+              {verificationError || 'We could not verify your payment. Please contact support before trying again.'}
+            </p>
+            <Link to="/dashboard" className="inline-block px-6 py-2.5 rounded-xl bg-orange-500 text-xs font-bold text-white hover:bg-orange-600">
+              View Student Activity
             </Link>
           </>
         )}

@@ -72,7 +72,7 @@ export const PoliciesPage: React.FC = () => {
 
             <h2 className="text-sm font-bold text-slate-950 mt-4">2. Activity Telemetry & TTL Policy</h2>
             <p>
-              To protect user privacy and operate within strict quota limits, we only log core engagement events (logins, opportunity views, apply clicks, search queries, component lookups, cart additions, and kit purchases). Activity logs are automatically stamped with a 90-day expiration field (<code>expireAt</code>) and pruned using Firestore TTL policies.
+              To protect user privacy and operate within strict quota limits, we only log core engagement events (logins, opportunity views, apply clicks, search queries, component lookups, cart additions, and project purchases). Activity logs are automatically stamped with a 90-day expiration field (<code>expireAt</code>) and pruned using Firestore TTL policies.
             </p>
 
             <h2 className="text-sm font-bold text-slate-950 mt-4">3. Data Security & Third Parties</h2>
@@ -139,7 +139,7 @@ export const PoliciesPage: React.FC = () => {
 
             <h2 className="text-sm font-bold text-slate-950 mt-4">1. Domestic Coverage (India)</h2>
             <p>
-              We ship physical lab kits to all serviceable pin codes across India via partner couriers (BlueDart, Delhivery, DTDC, and Speed Post).
+              We ship physical project packages to all serviceable pin codes across India via partner couriers (BlueDart, Delhivery, DTDC, and Speed Post).
             </p>
 
             <h2 className="text-sm font-bold text-slate-950 mt-4">2. Delivery Timelines</h2>

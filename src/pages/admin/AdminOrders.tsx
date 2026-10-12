@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
-import { useData } from '../../context/DataContext';
+import React, { useCallback, useEffect, useState } from 'react';
+import { collection, doc, getDocs, updateDoc } from 'firebase/firestore';
+import { db } from '../../lib/firebase';
 import { Order } from '../../types';
 import { 
   ShoppingBag, 
@@ -8,44 +9,106 @@ import {
   Clock, 
   AlertCircle, 
   FileText, 
-  ExternalLink 
+  ExternalLink,
+  RefreshCw,
 } from 'lucide-react';
 
 export const AdminOrders: React.FC = () => {
-  const { orders } = useData();
+  const [orders, setOrders] = useState<Order[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [filterStatus, setFilterStatus] = useState<string>('all');
+  const [updatingOrderId, setUpdatingOrderId] = useState<string | null>(null);
+
+  const loadOrders = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const [ordersSnapshot, usersSnapshot] = await Promise.all([
+        getDocs(collection(db, 'orders')),
+        getDocs(collection(db, 'users')),
+      ]);
+      const users = new Map(usersSnapshot.docs.map((document) => [document.id, document.data()]));
+      setOrders(ordersSnapshot.docs.map((document) => {
+        const order = document.data() as Order;
+        const student = users.get(order.userId);
+        return {
+          ...order,
+          id: document.id,
+          userName: order.userName || student?.displayName || student?.name || 'Student',
+          userEmail: order.userEmail || student?.email || '',
+          userPhone: order.userPhone || student?.phone || '',
+        };
+      }));
+    } catch (loadError) {
+      setError(loadError instanceof Error ? loadError.message : 'Could not load orders.');
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    void loadOrders();
+  }, [loadOrders]);
 
   const filteredOrders = orders.filter((o) => {
     if (filterStatus === 'all') return true;
     return o.status === filterStatus;
   });
 
+  const updateOrderStatus = async (order: Order, status: 'shipped' | 'delivered') => {
+    setUpdatingOrderId(order.id);
+    setError(null);
+    try {
+      await updateDoc(doc(db, 'orders', order.id), { status });
+      setOrders((current) => current.map((item) => item.id === order.id ? { ...item, status } : item));
+    } catch (updateError) {
+      setError(updateError instanceof Error ? updateError.message : 'Could not update order fulfillment status.');
+    } finally {
+      setUpdatingOrderId(null);
+    }
+  };
+
   return (
     <div className="space-y-6 text-slate-900">
       
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-        <div>
+        <div className="flex-1">
           <h1 className="text-xl font-bold font-mono text-slate-950">Orders & Fulfillment</h1>
-          <p className="text-xs text-slate-500">Track Cashfree transactions and dispatch lab project packages.</p>
+          <p className="text-xs text-slate-500">Track project payments and dispatch lab project packages.</p>
         </div>
 
-        {/* Filter Pills */}
-        <div className="flex items-center gap-1.5 p-1 bg-white border border-stone-200 rounded-xl shadow-2xs">
-          {['all', 'paid', 'shipped', 'delivered', 'pending'].map((st) => (
-            <button
-              key={st}
-              onClick={() => setFilterStatus(st)}
-              className={`px-3 py-1.5 rounded-lg text-xs font-mono uppercase transition-colors ${
-                filterStatus === st ? 'bg-orange-50 text-orange-700 font-bold border border-orange-200' : 'text-slate-500 hover:text-slate-900'
-              }`}
-            >
-              {st}
-            </button>
-          ))}
+        <div className="flex flex-wrap items-center gap-2">
+          <button
+            type="button"
+            onClick={() => void loadOrders()}
+            disabled={loading}
+            className="inline-flex items-center gap-2 rounded-xl border border-orange-200 bg-white px-3 py-2 text-xs font-semibold text-orange-700 hover:bg-orange-50 disabled:opacity-60"
+          >
+            <RefreshCw className={`h-3.5 w-3.5 ${loading ? 'animate-spin' : ''}`} /> Refresh
+          </button>
+          {/* Filter Pills */}
+          <div className="flex items-center gap-1.5 p-1 bg-white border border-stone-200 rounded-xl shadow-2xs">
+            {['all', 'paid', 'shipped', 'delivered', 'pending'].map((st) => (
+              <button
+                key={st}
+                onClick={() => setFilterStatus(st)}
+                className={`px-3 py-1.5 rounded-lg text-xs font-mono uppercase transition-colors ${
+                  filterStatus === st ? 'bg-orange-50 text-orange-700 font-bold border border-orange-200' : 'text-slate-500 hover:text-slate-900'
+                }`}
+              >
+                {st}
+              </button>
+            ))}
+          </div>
         </div>
       </div>
 
-      {filteredOrders.length === 0 ? (
+      {error && <div role="alert" className="rounded-xl border border-rose-200 bg-rose-50 p-3 text-xs text-rose-800">{error}</div>}
+
+      {loading ? (
+        <div className="rounded-2xl border border-orange-100 bg-white p-8 text-center text-xs text-slate-500 shadow-sm">Loading student orders…</div>
+      ) : error ? null : filteredOrders.length === 0 ? (
         <div className="p-12 text-center bg-white border border-stone-200 rounded-2xl text-xs text-slate-500 shadow-xs">
           No orders matching current filter criteria.
         </div>
@@ -89,6 +152,26 @@ export const AdminOrders: React.FC = () => {
                   <span className="text-[11px] text-slate-500 font-mono">
                     {new Date(ord.createdAt).toLocaleDateString()}
                   </span>
+                  {ord.status === 'paid' && (
+                    <button
+                      type="button"
+                      disabled={updatingOrderId === ord.id}
+                      onClick={() => void updateOrderStatus(ord, 'shipped')}
+                      className="rounded-lg bg-orange-600 px-3 py-2 text-[11px] font-semibold text-white hover:bg-orange-700 disabled:opacity-60"
+                    >
+                      Mark shipped
+                    </button>
+                  )}
+                  {ord.status === 'shipped' && (
+                    <button
+                      type="button"
+                      disabled={updatingOrderId === ord.id}
+                      onClick={() => void updateOrderStatus(ord, 'delivered')}
+                      className="rounded-lg bg-orange-600 px-3 py-2 text-[11px] font-semibold text-white hover:bg-orange-700 disabled:opacity-60"
+                    >
+                      Mark delivered
+                    </button>
+                  )}
                 </div>
               </div>
             ))}

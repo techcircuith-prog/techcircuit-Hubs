@@ -17,7 +17,9 @@ Configure the following in your environment or the AI Studio Secrets panel:
 
 | Variable | Description | Example / Default |
 |---|---|---|
-| `ADMIN_EMAILS` | Comma-separated list of admin email addresses | `rock86367@gmail.com` |
+| `FIREBASE_PROJECT_ID` | Existing Firebase project used by the Web SDK and trusted backend | `formal-harbor-qrtgb` |
+| `FIREBASE_DATABASE_ID` | Existing Firestore database ID used by the app | Set to the app's configured database |
+| `FIREBASE_SERVICE_ACCOUNT_PATH` | Optional local credential path for server-only Firebase operations; hosted environments should use Application Default Credentials | Keep keys outside the repository |
 | `APP_URL` | Public application URL for callbacks & webhooks | `https://your-domain.run.app` |
 | `NEXAR_CLIENT_ID` | Nexar Supply API Client ID (Octopart/Nexar) | `...` |
 | `NEXAR_CLIENT_SECRET` | Nexar Supply API Client Secret | `...` |
@@ -45,7 +47,17 @@ Configure the following in your environment or the AI Studio Secrets panel:
 4. The backend securely retrieves OAuth2 tokens and caches search responses for 24 hours to protect API quotas.
 
 ## Firebase Configuration
-Firebase Firestore and Auth are pre-configured. Security rules (`firestore.rules`) and composite indexes (`firestore.indexes.json`) ensure:
-- Students can only manage their own profile, cart, applications, and bookmarks.
-- Skill points, orders, and completions are server-authoritative.
-- Admin dashboard routes are protected both on the client and server.
+The existing Web SDK configuration points to project `formal-harbor-qrtgb` and the existing named Firestore database. Admin sign-in uses Firebase Authentication (Email/Password); admin authorization is determined by a trusted `/admins/{uid}` membership document or trusted Firebase custom claim. The client cannot create or modify admin membership. Firestore Security Rules, not client visibility checks, enforce admin-only student/application/order reads and opportunity writes. Order fulfillment updates are limited to `paid → shipped → delivered`; payment status remains server-authoritative.
+
+Before enabling the migrated admin console:
+1. In Firebase Console for the existing project, enable **Authentication → Sign-in method → Email/Password** and create the administrator's Firebase Authentication user (if one does not already exist).
+2. Obtain that user's UID from the Authentication user list.
+3. In the existing Firestore database, have an authorized project administrator create `/admins/{uid}` for that exact UID. Do not use the application to create this document; the `admins` rules explicitly deny all client writes. A minimal marker document such as `{ "enabled": true }` is sufficient.
+4. Review and publish `firestore.rules` to that same existing database. This project has no `firebase.json`, so no rules deployment was attempted here. The rules remove a legacy hardcoded email admin bypass, allow signed-in users to read only their own admin membership marker, and require admin membership for protected records and operations. Do not publish until the project owner has reviewed the rules.
+5. Sign in at `/admin` with the provisioned Firebase Authentication account.
+
+An IAM administrator may need to grant Firebase Console access to create the Auth user and membership document, and permission to publish Firestore rules. No service-account key is needed for browser-based admin features.
+
+Cashfree payment creation, payment verification, and webhook reconciliation remain trusted server-only operations using Firebase Admin SDK. On a hosted platform, configure the server to use its assigned Application Default Credentials identity with Firestore access (for example, `roles/datastore.user` on the existing project/database). Local development without an authorized ADC identity or a separately provided external service-account key cannot perform those server-only operations; payment status must not be changed from the browser. Nexar, Cashfree, Cloudinary, and YouTube credentials remain server-side environment variables and are unrelated to Firestore admin authorization.
+
+If Firebase Console refuses to generate a key or create the account because of insufficient permissions, ask a project owner or IAM administrator to create/configure the service account. Creating an account requires `iam.serviceAccounts.create` (included in **Service Account Admin**, `roles/iam.serviceAccountAdmin`). Generating a JSON key for an existing account requires `iam.serviceAccountKeys.create` (included in **Service Account Key Admin**, `roles/iam.serviceAccountKeyAdmin`). The account also needs Firestore data access, such as **Cloud Datastore User** (`roles/datastore.user`), scoped to the existing project. Do not grant yourself permissions or disable organization policies to work around this restriction.

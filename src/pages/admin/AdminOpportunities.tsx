@@ -15,12 +15,13 @@ import {
 } from 'lucide-react';
 
 export const AdminOpportunities: React.FC = () => {
-  const { opportunities, companies, skills, saveOpportunity, deleteOpportunity, saveCompany } = useData();
+  const { opportunities, companies, skills, saveOpportunity, deleteOpportunity } = useData();
 
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingOpp, setEditingOpp] = useState<Partial<Opportunity> | null>(null);
   const [search, setSearch] = useState('');
-  const [newCompanyName, setNewCompanyName] = useState('');
+  const [actionError, setActionError] = useState<string | null>(null);
+  const [saving, setSaving] = useState(false);
 
   const filtered = opportunities.filter((o) => {
     if (!search) return true;
@@ -60,27 +61,17 @@ export const AdminOpportunities: React.FC = () => {
   const handleSaveForm = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!editingOpp) return;
-    await saveOpportunity(editingOpp);
-    setIsFormOpen(false);
-    setEditingOpp(null);
-  };
-
-  const handleAddNewCompanyInline = async () => {
-    if (!newCompanyName.trim()) return;
-    const id = newCompanyName.toLowerCase().replace(/[^a-z0-9]/g, '-');
-    await saveCompany({
-      id,
-      name: newCompanyName.trim(),
-      website: 'https://',
-    });
-    if (editingOpp) {
-      setEditingOpp({
-        ...editingOpp,
-        companyId: id,
-        companyName: newCompanyName.trim(),
-      });
+    setActionError(null);
+    setSaving(true);
+    try {
+      await saveOpportunity(editingOpp);
+      setIsFormOpen(false);
+      setEditingOpp(null);
+    } catch (error) {
+      setActionError(error instanceof Error ? error.message : 'Could not save the opportunity.');
+    } finally {
+      setSaving(false);
     }
-    setNewCompanyName('');
   };
 
   const handleCsvBulkImport = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -116,6 +107,8 @@ export const AdminOpportunities: React.FC = () => {
     <div className="space-y-6 text-slate-900">
       
       {/* Action Header */}
+      {actionError && <div role="alert" className="rounded-xl border border-rose-200 bg-rose-50 p-3 text-xs text-rose-800">{actionError}</div>}
+
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-xl font-bold font-mono text-slate-950">Opportunities Directory</h1>
@@ -219,6 +212,8 @@ export const AdminOpportunities: React.FC = () => {
               </button>
             </div>
 
+            {actionError && <div role="alert" className="mb-4 rounded-xl border border-orange-200 bg-orange-50 p-3 text-xs text-orange-800">{actionError}</div>}
+
             <form onSubmit={handleSaveForm} className="space-y-4 text-xs">
               <div className="grid grid-cols-2 gap-3">
                 <div>
@@ -258,45 +253,23 @@ export const AdminOpportunities: React.FC = () => {
                 />
               </div>
 
-              {/* Company Picker + Inline Create */}
               <div>
                 <label className="block text-slate-700 font-medium mb-1">Company *</label>
-                <div className="flex gap-2">
-                  <select
-                    value={editingOpp.companyName}
-                    onChange={(e) => {
-                      const c = companies.find((comp) => comp.name === e.target.value);
-                      setEditingOpp({
-                        ...editingOpp,
-                        companyName: e.target.value,
-                        companyId: c?.id || 'ti',
-                      });
-                    }}
-                    className="flex-1 px-3 py-2 bg-stone-50 border border-stone-200 rounded-lg text-slate-800 outline-none focus:border-orange-500"
-                  >
-                    {companies.map((c) => (
-                      <option key={c.id} value={c.name}>{c.name}</option>
-                    ))}
-                  </select>
-                </div>
-
-                {/* Inline new company */}
-                <div className="flex gap-2 mt-2">
-                  <input
-                    type="text"
-                    placeholder="Or type new company name..."
-                    value={newCompanyName}
-                    onChange={(e) => setNewCompanyName(e.target.value)}
-                    className="flex-1 px-3 py-1.5 bg-white border border-stone-200 rounded-lg text-slate-800 text-xs outline-none focus:border-orange-500"
-                  />
-                  <button
-                    type="button"
-                    onClick={handleAddNewCompanyInline}
-                    className="px-3 py-1.5 bg-stone-100 hover:bg-stone-200 text-slate-700 rounded-lg text-xs font-semibold"
-                  >
-                    Add Company
-                  </button>
-                </div>
+                <input
+                  type="text"
+                  required
+                  list="admin-opportunity-companies"
+                  value={editingOpp.companyName || ''}
+                  onChange={(e) => {
+                    const companyName = e.target.value;
+                    const company = companies.find((item) => item.name === companyName);
+                    setEditingOpp({ ...editingOpp, companyName, companyId: company?.id || '' });
+                  }}
+                  className="w-full px-3 py-2 bg-stone-50 border border-stone-200 rounded-lg text-slate-800 outline-none focus:border-orange-500"
+                />
+                <datalist id="admin-opportunity-companies">
+                  {companies.map((company) => <option key={company.id} value={company.name} />)}
+                </datalist>
               </div>
 
               <div className="grid grid-cols-3 gap-3">
@@ -366,9 +339,10 @@ export const AdminOpportunities: React.FC = () => {
 
               <button
                 type="submit"
-                className="w-full py-3 bg-orange-500 hover:bg-orange-600 text-white font-bold rounded-xl text-xs transition-colors cursor-pointer shadow-xs shadow-orange-500/25"
+                disabled={saving}
+                className="w-full py-3 bg-orange-500 hover:bg-orange-600 text-white font-bold rounded-xl text-xs transition-colors cursor-pointer shadow-xs shadow-orange-500/25 disabled:cursor-wait disabled:opacity-60"
               >
-                Save Opportunity
+                {saving ? 'Saving Opportunity…' : 'Save Opportunity'}
               </button>
             </form>
           </div>

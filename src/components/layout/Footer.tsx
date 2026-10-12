@@ -4,7 +4,7 @@ import { Zap } from 'lucide-react';
 
 export const Footer: React.FC = () => {
   return (
-    <footer className="bg-slate-50 border-t border-orange-100 text-slate-600 text-xs py-10 pb-24 md:pb-10 transition-colors">
+    <footer className="bg-white border-t border-orange-100 text-slate-600 text-xs py-10 transition-colors">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="grid grid-cols-2 md:grid-cols-4 gap-8 mb-8">
           
@@ -13,7 +13,7 @@ export const Footer: React.FC = () => {
               <img 
                 src="/ece-logo.png" 
                 alt="ECE Hub Logo" 
-                className="h-16 sm:h-20 w-auto object-contain" 
+                className="h-20 sm:h-24 w-auto object-contain" 
               />
             </Link>
             <p className="text-slate-500 text-xs leading-relaxed mb-4">
@@ -46,7 +46,7 @@ export const Footer: React.FC = () => {
             <ul className="space-y-2">
               <li><Link to="/projects" className="hover:text-orange-600 transition-colors">42 ECE Lab Projects</Link></li>
               <li><Link to="/projects" className="hover:text-orange-600 transition-colors">Project Source & Docs</Link></li>
-              <li><Link to="/skills" className="hover:text-orange-600 transition-colors">Skill Radar Chart</Link></li>
+              <li><Link to="/dashboard" className="hover:text-orange-600 transition-colors">Student Activity</Link></li>
               <li><Link to="/dashboard" className="hover:text-orange-600 transition-colors">Application Tracker</Link></li>
             </ul>
           </div>

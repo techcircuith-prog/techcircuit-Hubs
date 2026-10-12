@@ -3,6 +3,7 @@ import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useData } from '../context/DataContext';
 import { useAuth } from '../context/AuthContext';
 import { Project } from '../types';
+import { ProjectImage } from '../components/common/ProjectImage';
 import { 
   Cpu, 
   ShoppingCart, 
@@ -22,7 +23,6 @@ export const ProjectDetailPage: React.FC = () => {
   const { addToCart } = useAuth();
 
   const proj = useMemo(() => projects.find((p) => p.id === id) || null, [id, projects]);
-  const [selectedImageIdx, setSelectedImageIdx] = useState(0);
   const [isAdded, setIsAdded] = useState(false);
 
   if (!proj) {
@@ -59,15 +59,6 @@ export const ProjectDetailPage: React.FC = () => {
     navigate('/cart');
   };
 
-  // Sanitize project images - exclude any external random/unsplash images
-  const cleanImages = (proj?.images || [])
-    .filter((img) => !img.includes('unsplash.com') && !img.includes('random'));
-  
-  const idNum = proj ? parseInt(proj.id.replace(/\D/g, '') || '1', 10) : 1;
-  const safeNum = Math.min(Math.max(idNum, 1), 42);
-  const primaryImage = cleanImages[0] || `/projects/ece${safeNum}.png`;
-  const displayImages = [primaryImage];
-
   return (
     <div className="min-h-screen bg-pcb-grid text-slate-900 py-8 px-4 sm:px-6 lg:px-8 pb-24 md:pb-16 max-w-6xl mx-auto space-y-6">
       
@@ -85,40 +76,7 @@ export const ProjectDetailPage: React.FC = () => {
         
         {/* Left: Images */}
         <div className="md:col-span-6 space-y-3">
-          <div className="aspect-video w-full rounded-2xl overflow-hidden bg-stone-100 border border-stone-200 relative">
-            <img
-              src={displayImages[selectedImageIdx] || primaryImage}
-              alt={proj.title}
-              className="w-full h-full object-cover"
-              onError={(e) => {
-                e.currentTarget.onerror = null;
-                const fallback = `/projects/ece${safeNum}.png`;
-                if (e.currentTarget.src !== fallback) {
-                  e.currentTarget.src = fallback;
-                }
-              }}
-            />
-            <span className="absolute top-3 left-3 px-2.5 py-0.5 rounded text-[10px] font-mono font-bold uppercase bg-white/90 text-orange-700 border border-orange-200 shadow-xs">
-              ECE-{String(safeNum).padStart(2, '0')} • Verified Lab Project
-            </span>
-          </div>
-
-          {/* Thumbnail strip if multiple genuine images */}
-          {displayImages.length > 1 && (
-            <div className="flex gap-2">
-              {displayImages.map((img, idx) => (
-                <button
-                  key={idx}
-                  onClick={() => setSelectedImageIdx(idx)}
-                  className={`w-16 h-12 rounded-lg overflow-hidden border-2 transition-all cursor-pointer ${
-                    selectedImageIdx === idx ? 'border-orange-500 scale-105' : 'border-stone-200 opacity-60'
-                  }`}
-                >
-                  <img src={img} alt="Thumb" className="w-full h-full object-cover" />
-                </button>
-              ))}
-            </div>
-          )}
+          <ProjectImage project={proj} className="aspect-video w-full rounded-2xl border border-orange-100" imageClassName="absolute inset-0 h-full w-full object-cover" />
 
           {/* Trust assurances */}
           <div className="p-4 bg-orange-50/50 rounded-xl border border-orange-100 text-xs space-y-2 text-slate-600">

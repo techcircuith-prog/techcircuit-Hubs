@@ -8,7 +8,8 @@ import {
   deleteDoc, 
   query, 
   where, 
-  onSnapshot 
+  onSnapshot,
+  writeBatch,
 } from 'firebase/firestore';
 import { db, auth, handleFirestoreError, OperationType } from '../lib/firebase';
 import { useAuth } from './AuthContext';
@@ -202,6 +203,18 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
               createdAt: custom?.createdAt || '2026-10-09T00:00:00.000Z',
             } as Project;
           });
+          const canonicalIds = new Set(list.map((project) => project.id));
+          for (const document of projSnap.docs) {
+            if (canonicalIds.has(document.id)) continue;
+            const project = document.data() as Project;
+            list.push({
+              ...project,
+              id: document.id,
+              images: Array.isArray(project.images) ? project.images : [],
+              skillIds: Array.isArray(project.skillIds) ? project.skillIds : [],
+              createdAt: project.createdAt || new Date().toISOString(),
+            });
+          }
 
           if (mounted) setProjects(list);
         } catch {
@@ -559,6 +572,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
   // Admin CRUD Functions
   const saveOpportunity = async (opp: Partial<Opportunity>) => {
+    if (!isAdmin) throw new Error('Administrator access is required to save opportunities.');
     const id = opp.id || `opp_${Date.now()}`;
     const item = { ...opp, id, createdAt: opp.createdAt || new Date().toISOString() };
     await setDoc(doc(db, 'opportunities', id), item, { merge: true });
@@ -574,11 +588,13 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   };
 
   const deleteOpportunity = async (id: string) => {
+    if (!isAdmin) throw new Error('Administrator access is required to delete opportunities.');
     await deleteDoc(doc(db, 'opportunities', id));
     setOpportunities((prev) => prev.filter((o) => o.id !== id));
   };
 
   const saveProject = async (proj: Partial<Project>) => {
+    if (!isAdmin) throw new Error('Administrator access is required to save projects.');
     const id = proj.id || `proj_${Date.now()}`;
     const item = { ...proj, id, createdAt: proj.createdAt || new Date().toISOString() };
     await setDoc(doc(db, 'projects', id), item, { merge: true });
@@ -594,11 +610,13 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   };
 
   const deleteProject = async (id: string) => {
+    if (!isAdmin) throw new Error('Administrator access is required to delete projects.');
     await deleteDoc(doc(db, 'projects', id));
     setProjects((prev) => prev.filter((p) => p.id !== id));
   };
 
   const saveResource = async (res: Partial<Resource>) => {
+    if (!isAdmin) throw new Error('Administrator access is required to save resources.');
     const id = res.id || `res_${Date.now()}`;
     const item = { ...res, id, createdAt: res.createdAt || new Date().toISOString() };
     await setDoc(doc(db, 'resources', id), item, { merge: true });
@@ -614,11 +632,13 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   };
 
   const deleteResource = async (id: string) => {
+    if (!isAdmin) throw new Error('Administrator access is required to delete resources.');
     await deleteDoc(doc(db, 'resources', id));
     setResources((prev) => prev.filter((r) => r.id !== id));
   };
 
   const saveLearningPath = async (path: Partial<LearningPath>) => {
+    if (!isAdmin) throw new Error('Administrator access is required to save learning paths.');
     const id = path.id || `path_${Date.now()}`;
     const item = { ...path, id, createdAt: path.createdAt || new Date().toISOString() };
     await setDoc(doc(db, 'learning_paths', id), item, { merge: true });
@@ -634,11 +654,13 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   };
 
   const deleteLearningPath = async (id: string) => {
+    if (!isAdmin) throw new Error('Administrator access is required to delete learning paths.');
     await deleteDoc(doc(db, 'learning_paths', id));
     setLearningPaths((prev) => prev.filter((p) => p.id !== id));
   };
 
   const saveCompany = async (comp: Partial<Company>) => {
+    if (!isAdmin) throw new Error('Administrator access is required to save companies.');
     const id = comp.id || `comp_${Date.now()}`;
     const item = { ...comp, id };
     await setDoc(doc(db, 'companies', id), item, { merge: true });
@@ -654,6 +676,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   };
 
   const saveSkill = async (skill: Partial<Skill>) => {
+    if (!isAdmin) throw new Error('Administrator access is required to save skills.');
     const id = skill.id || `skill_${Date.now()}`;
     const item = { ...skill, id };
     await setDoc(doc(db, 'skills', id), item, { merge: true });
@@ -669,54 +692,71 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   };
 
   const updateScoringConfig = async (config: ScoringConfig) => {
+    if (!isAdmin) throw new Error('Administrator access is required to change scoring settings.');
+    await setDoc(doc(db, 'config', 'scoring'), config, { merge: true });
     setScoringConfig(config);
-    await setDoc(doc(db, 'config', 'scoring'), config);
   };
 
   const purgeAllMockData = async () => {
+    if (!isAdmin) throw new Error('Administrator access is required to purge mock data.');
     setLoading(true);
     try {
-      // 1. Delete all mock opportunities from Firestore
-      const oppSnap = await getDocs(collection(db, 'opportunities'));
-      for (const d of oppSnap.docs) {
-        const data = d.data();
-        if (d.id.startsWith('opp-') || data.title?.includes('VLSI Digital Design') || data.title?.includes('Firmware Engineering') || data.title?.includes('Hands-on 6-Layer High-Speed') || data.title?.includes('India Silicon Hackathon')) {
-          try { await deleteDoc(doc(db, 'opportunities', d.id)); } catch {}
-        }
-      }
-      setOpportunities([]);
+      const targets = [
+        {
+          collectionName: 'opportunities',
+          matches: (id: string, data: Record<string, any>) => id.startsWith('opp-') ||
+            ['VLSI Digital Design', 'Firmware Engineering', 'Hands-on 6-Layer High-Speed', 'India Silicon Hackathon']
+              .some((title) => data.title?.includes(title)),
+        },
+        {
+          collectionName: 'resources',
+          matches: (id: string, data: Record<string, any>) => id.startsWith('res-') ||
+            data.url?.includes('dQw4w9WgXcQ') ||
+            ['NPTEL: CMOS VLSI', 'Falstad Circuit', 'FastBit'].some((title) => data.title?.includes(title)),
+        },
+        {
+          collectionName: 'companies',
+          matches: (id: string, data: Record<string, any>) => id.startsWith('comp-') ||
+            ['texas-instruments', 'qualcomm-india', 'stmicroelectronics', 'intel-semiconductor', 'cadence-design-systems', 'bharat-electronics-limited--bel-'].includes(id) ||
+            ['Texas Instruments', 'Qualcomm India', 'STMicroelectronics', 'Intel Semiconductor'].includes(data.name),
+        },
+        {
+          collectionName: 'learning_paths',
+          matches: (id: string, data: Record<string, any>) => id.startsWith('path-') ||
+            ['Embedded Systems: Beginner', 'VLSI Digital Design & ASIC'].some((title) => data.title?.includes(title)),
+        },
+      ] as const;
 
-      // 2. Delete all mock resources from Firestore
-      const resSnap = await getDocs(collection(db, 'resources'));
-      for (const d of resSnap.docs) {
-        const data = d.data();
-        if (d.id.startsWith('res-') || data.url?.includes('dQw4w9WgXcQ') || data.title?.includes('NPTEL: CMOS VLSI') || data.title?.includes('Falstad Circuit') || data.title?.includes('FastBit')) {
-          try { await deleteDoc(doc(db, 'resources', d.id)); } catch {}
-        }
+      const snapshots = await Promise.all(targets.map(({ collectionName }) => getDocs(collection(db, collectionName))));
+      const deletions = snapshots.flatMap((snapshot, index) => snapshot.docs
+        .filter((document) => targets[index].matches(document.id, document.data()))
+        .map((document) => document.ref));
+      for (let index = 0; index < deletions.length; index += 450) {
+        const batch = writeBatch(db);
+        deletions.slice(index, index + 450).forEach((reference) => batch.delete(reference));
+        await batch.commit();
       }
-      setResources([]);
 
-      // 3. Delete all mock companies from Firestore
-      const compSnap = await getDocs(collection(db, 'companies'));
-      for (const d of compSnap.docs) {
-        const data = d.data();
-        if (d.id.startsWith('comp-') || ['texas-instruments', 'qualcomm-india', 'stmicroelectronics', 'intel-semiconductor', 'cadence-design-systems', 'bharat-electronics-limited--bel-'].includes(d.id) || ['Texas Instruments', 'Qualcomm India', 'STMicroelectronics', 'Intel Semiconductor'].includes(data.name)) {
-          try { await deleteDoc(doc(db, 'companies', d.id)); } catch {}
-        }
-      }
-      setCompanies([]);
-
-      // 4. Delete all mock learning paths from Firestore
-      const pathSnap = await getDocs(collection(db, 'learning_paths'));
-      for (const d of pathSnap.docs) {
-        const data = d.data();
-        if (d.id.startsWith('path-') || data.title?.includes('Embedded Systems: Beginner') || data.title?.includes('VLSI Digital Design & ASIC')) {
-          try { await deleteDoc(doc(db, 'learning_paths', d.id)); } catch {}
-        }
-      }
-      setLearningPaths([]);
-    } catch (err) {
-      console.error('Error during mock data purge:', err);
+      const hasTitle = (title: string | undefined, text: string) => Boolean(title?.includes(text));
+      setOpportunities((items) => items.filter((item) =>
+        !item.id.startsWith('opp-') &&
+        !['VLSI Digital Design', 'Firmware Engineering', 'Hands-on 6-Layer High-Speed', 'India Silicon Hackathon']
+          .some((title) => hasTitle(item.title, title))
+      ));
+      setResources((items) => items.filter((item) =>
+        !item.id.startsWith('res-') &&
+        !item.url.includes('dQw4w9WgXcQ') &&
+        !['NPTEL: CMOS VLSI', 'Falstad Circuit', 'FastBit'].some((title) => hasTitle(item.title, title))
+      ));
+      setCompanies((items) => items.filter((item) =>
+        !item.id.startsWith('comp-') &&
+        !['texas-instruments', 'qualcomm-india', 'stmicroelectronics', 'intel-semiconductor', 'cadence-design-systems', 'bharat-electronics-limited--bel-'].includes(item.id) &&
+        !['Texas Instruments', 'Qualcomm India', 'STMicroelectronics', 'Intel Semiconductor'].includes(item.name)
+      ));
+      setLearningPaths((items) => items.filter((item) =>
+        !item.id.startsWith('path-') &&
+        !['Embedded Systems: Beginner', 'VLSI Digital Design & ASIC'].some((title) => hasTitle(item.title, title))
+      ));
     } finally {
       setLoading(false);
     }

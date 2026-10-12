@@ -22,7 +22,7 @@ interface AuthContextType {
   removeFromCart: (projectId: string) => void;
   clearCart: () => void;
   cartTotal: number;
-  login: () => Promise<void>;
+  login: () => Promise<boolean>;
   loginWithDemoStudent: (email?: string, name?: string) => Promise<void>;
   loginWithEmail: (email: string, pass: string) => Promise<void>;
   registerWithEmail: (email: string, pass: string, displayName?: string) => Promise<void>;
@@ -35,21 +35,55 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-const ADMIN_FALLBACK_EMAIL = 'rock86367@gmail.com';
+const loadCart = (): CartItem[] => {
+  try {
+    const saved = localStorage.getItem('techcircuithub_cart');
+    if (!saved) return [];
+
+    const parsed: unknown = JSON.parse(saved);
+    if (!Array.isArray(parsed)) return [];
+
+    return parsed.reduce<CartItem[]>((items, value: unknown) => {
+      if (!value || typeof value !== 'object') return items;
+      const candidate = value as Partial<CartItem>;
+      if (
+        typeof candidate.projectId !== 'string' ||
+        !candidate.projectId ||
+        typeof candidate.title !== 'string' ||
+        typeof candidate.price !== 'number' ||
+        !Number.isFinite(candidate.price) ||
+        (candidate.type !== 'digital' && candidate.type !== 'physical')
+      ) return items;
+
+      const quantity = typeof candidate.quantity === 'number' && Number.isFinite(candidate.quantity)
+        ? Math.max(1, Math.floor(candidate.quantity))
+        : 1;
+      const existing = items.find((item) => item.projectId === candidate.projectId);
+      if (existing) {
+        existing.quantity += quantity;
+      } else {
+        items.push({
+          projectId: candidate.projectId,
+          title: candidate.title,
+          price: candidate.price,
+          type: candidate.type,
+          image: typeof candidate.image === 'string' ? candidate.image : undefined,
+          quantity,
+        });
+      }
+      return items;
+    }, []);
+  } catch {
+    return [];
+  }
+};
 
 export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [isAdmin, setIsAdmin] = useState<boolean>(false);
   const [loading, setLoading] = useState<boolean>(true);
-  const [cart, setCart] = useState<CartItem[]>(() => {
-    try {
-      const saved = localStorage.getItem('techcircuithub_cart');
-      return saved ? JSON.parse(saved) : [];
-    } catch {
-      return [];
-    }
-  });
+  const [cart, setCart] = useState<CartItem[]>(loadCart);
 
   // Save cart to local storage
   useEffect(() => {
@@ -88,22 +122,25 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   };
 
   useEffect(() => {
+    let authStateVersion = 0;
     const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
+      const version = ++authStateVersion;
+      setLoading(true);
       setUser(currentUser);
+      setProfile(null);
       if (currentUser) {
         try {
-          // Check if explicit manual admin session is active
-          const localAdmin = sessionStorage.getItem('techcircuithub_admin_session') || localStorage.getItem('techcircuithub_admin_session');
-          let adminStatus = false;
-          if (localAdmin) {
+          const tokenResult = await currentUser.getIdTokenResult();
+          let adminStatus = tokenResult.claims.admin === true;
+          if (!adminStatus) {
             try {
-              const parsed = JSON.parse(localAdmin);
-              if (parsed && (parsed.isAdmin || parsed.role === 'admin')) {
-                adminStatus = true;
-              }
-            } catch {}
+              const adminMembership = await getDoc(doc(db, 'admins', currentUser.uid));
+              adminStatus = adminMembership.exists();
+            } catch (error) {
+              if (version !== authStateVersion) return;
+              console.warn('Could not verify administrator membership:', error);
+            }
           }
-
           setIsAdmin(adminStatus);
 
           // Fetch user profile from Firestore with offline resilience
@@ -112,19 +149,25 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
           try {
             const userSnap = await getDoc(userDocRef);
+            if (version !== authStateVersion) return;
             if (userSnap.exists()) {
-              loadedProfile = userSnap.data() as UserProfile;
+              loadedProfile = {
+                ...userSnap.data(),
+                role: adminStatus ? 'admin' : 'student',
+              } as UserProfile;
               setProfile(loadedProfile);
               updateDoc(userDocRef, {
                 lastLoginAt: new Date().toISOString(),
               }).catch(() => {});
             }
           } catch (err: any) {
+            if (version !== authStateVersion) return;
             // Client is operating offline or still establishing connection
             console.warn('Firestore offline, using fallback auth profile:', err?.message || err);
           }
 
           if (!loadedProfile) {
+            if (version !== authStateVersion) return;
             // New user profile or offline fallback profile
             const fallbackProfile: UserProfile = {
               id: currentUser.uid,
@@ -137,57 +180,18 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
               interests: ['Embedded Systems', 'VLSI', 'PCB Design'],
             };
             setProfile(fallbackProfile);
-            try {
-              await setDoc(userDocRef, fallbackProfile, { merge: true });
-            } catch {}
+            setDoc(userDocRef, fallbackProfile, { merge: true }).catch((err) => {
+              console.warn('Failed to create student profile in Firestore:', err);
+            });
           }
 
+          if (version !== authStateVersion) return;
           logEvent('login');
         } catch (err) {
+          if (version !== authStateVersion) return;
           console.warn('Auth state handler warning:', err);
         }
       } else {
-        // If not logged in via Firebase, check if local admin session exists
-        const localAdmin = localStorage.getItem('techcircuithub_admin_session');
-        if (localAdmin) {
-          try {
-            const parsed = JSON.parse(localAdmin);
-            if (parsed && (parsed.isAdmin || parsed.role === 'admin' || parsed.email === 'tech@admin' || parsed.email === 'tech@admin.com' || parsed.email === 'rock86367@gmail.com')) {
-              setUser({
-                uid: parsed.uid || 'admin_tech_root',
-                email: parsed.email || 'tech@admin',
-                displayName: parsed.displayName || 'Tech Admin',
-                emailVerified: true,
-                isAnonymous: false,
-                metadata: {} as any,
-                providerData: [],
-                refreshToken: '',
-                tenantId: null,
-                delete: async () => {},
-                getIdToken: async () => 'admin-token',
-                getIdTokenResult: async () => ({ claims: { admin: true } } as any),
-                reload: async () => {},
-                toJSON: () => ({}),
-                phoneNumber: null,
-                photoURL: null,
-                providerId: 'custom-admin'
-              } as unknown as User);
-              setProfile({
-                id: parsed.uid || 'admin_tech_root',
-                email: parsed.email || 'tech@admin',
-                displayName: parsed.displayName || 'Tech Admin',
-                role: 'admin',
-                onboarded: true,
-                createdAt: new Date().toISOString(),
-                lastLoginAt: new Date().toISOString(),
-              });
-              setIsAdmin(true);
-              setLoading(false);
-              return;
-            }
-          } catch {}
-        }
-
         // If not admin, check if local student session exists (e.g. dev login when OAuth domain is unauthorized)
         const localStudent = localStorage.getItem('techcircuithub_student_session');
         if (localStudent) {
@@ -247,71 +251,41 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   }, []);
 
   const adminLogin = async (username: string, pass: string): Promise<boolean> => {
-    const cleanUser = username.trim().toLowerCase();
-    const cleanPass = pass.trim();
-
-    const allowedUsers = [
-      'tech@admin',
-      'tech@admin.com',
-      'admin',
-      'admin@admin.com',
-      'rock86367@gmail.com',
-    ];
-
-    const isUserValid = allowedUsers.includes(cleanUser);
-    const isPassValid = cleanPass === 'adminpassword123' || cleanPass === 'admin' || cleanPass === 'admin123';
-
-    if (!isUserValid || !isPassValid) {
-      throw new Error('Invalid administrator credentials.');
+    const authenticatedUser = await fbLoginWithEmail(username.trim().toLowerCase(), pass);
+    let isAdminAccount = (await authenticatedUser.getIdTokenResult()).claims.admin === true;
+    if (!isAdminAccount) {
+      try {
+        isAdminAccount = (await getDoc(doc(db, 'admins', authenticatedUser.uid))).exists();
+      } catch (error) {
+        await fbLogout();
+        throw new Error(error instanceof Error
+          ? `Could not verify administrator membership. Check the deployed Firestore rules. ${error.message}`
+          : 'Could not verify administrator membership. Check the deployed Firestore rules.');
+      }
+    }
+    if (!isAdminAccount) {
+      await fbLogout();
+      throw new Error('This Firebase account is not authorized for administrator access.');
     }
 
-    const adminUser = {
-      uid: cleanUser === 'rock86367@gmail.com' ? 'admin_rock86367' : 'admin_tech_root',
-      email: cleanUser,
-      displayName: cleanUser === 'rock86367@gmail.com' ? 'Super Admin' : 'System Administrator',
-      role: 'admin' as const,
-      isAdmin: true,
-    };
-
-    localStorage.setItem('techcircuithub_admin_session', JSON.stringify(adminUser));
-
-    setUser({
-      uid: adminUser.uid,
-      email: adminUser.email,
-      displayName: adminUser.displayName,
-      emailVerified: true,
-      isAnonymous: false,
-      metadata: {} as any,
-      providerData: [],
-      refreshToken: '',
-      tenantId: null,
-      delete: async () => {},
-      getIdToken: async () => 'admin-token',
-      getIdTokenResult: async () => ({ claims: { admin: true } } as any),
-      reload: async () => {},
-      toJSON: () => ({}),
-      phoneNumber: null,
-      photoURL: null,
-      providerId: 'custom-admin'
-    } as unknown as User);
-
+    setUser(authenticatedUser);
     setProfile({
-      id: adminUser.uid,
-      email: adminUser.email,
-      displayName: adminUser.displayName,
+      id: authenticatedUser.uid,
+      email: authenticatedUser.email || '',
+      displayName: authenticatedUser.displayName || 'Tech CircuitHub Admin',
       role: 'admin',
       onboarded: true,
       createdAt: new Date().toISOString(),
       lastLoginAt: new Date().toISOString(),
     });
-
     setIsAdmin(true);
     return true;
   };
 
   const login = async () => {
     try {
-      await fbLogin();
+      const result = await fbLogin();
+      return !result.redirecting;
     } catch (err: any) {
       console.error('Google Sign In failed:', err);
       throw err;
@@ -353,7 +327,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       email: email,
       displayName: name,
       role: 'student',
-      onboarded: true,
+      onboarded: false,
       createdAt: new Date().toISOString(),
       lastLoginAt: new Date().toISOString(),
       interests: ['Embedded Systems', 'VLSI', 'PCB Design'],
@@ -397,16 +371,21 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           providerId: 'password'
         } as unknown as User;
         setUser(studentUser);
-        setProfile({
+        const fallbackProfile: UserProfile = {
           id: studentUser.uid,
           email: cleanEmail,
           displayName: cleanEmail.split('@')[0],
           role: 'student',
-          onboarded: true,
+          onboarded: false,
           createdAt: new Date().toISOString(),
           lastLoginAt: new Date().toISOString(),
-          interests: ['Embedded Systems', 'VLSI', 'PCB Design']
-        });
+          interests: ['Embedded Systems', 'VLSI', 'PCB Design'],
+        };
+        localStorage.setItem('techcircuithub_student_session', JSON.stringify({
+          ...fallbackProfile,
+          uid: studentUser.uid,
+        }));
+        setProfile(fallbackProfile);
         return;
       }
       throw err;
@@ -485,31 +464,35 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   };
 
   const updateUserProfile = async (data: Partial<UserProfile>) => {
-    if (!user) return;
-    // Apply locally first so the UI (e.g. student setup onboarding) is never
-    // blocked by a Firestore error, an offline state, or a missing user doc.
-    setProfile((prev) => (prev ? { ...prev, ...data } : prev));
+    if (!user) throw new Error('Sign in to save your student profile.');
+    const nextProfile: UserProfile = {
+      ...(profile || {
+        id: user.uid,
+        email: user.email || '',
+        displayName: user.displayName || '',
+        role: 'student',
+        onboarded: false,
+        createdAt: new Date().toISOString(),
+        lastLoginAt: new Date().toISOString(),
+      }),
+      ...data,
+    };
     const localStudent = localStorage.getItem('techcircuithub_student_session');
+
     if (localStudent) {
-      try {
-        const parsed = JSON.parse(localStudent);
-        localStorage.setItem('techcircuithub_student_session', JSON.stringify({ ...parsed, ...data }));
-      } catch {}
-    }
-    try {
-      const userDocRef = doc(db, 'users', user.uid);
-      // setDoc with merge creates the document if it does not exist yet,
-      // unlike updateDoc which throws "No document to update".
+      localStorage.setItem('techcircuithub_student_session', JSON.stringify({
+        ...nextProfile,
+        uid: user.uid,
+      }));
+    } else {
       await setDoc(
-        userDocRef,
+        doc(db, 'users', user.uid),
         { ...data, updatedAt: new Date().toISOString() },
         { merge: true }
       );
-    } catch (err) {
-      // Non-fatal: the local profile state is already updated above, so the
-      // app keeps working even if the Firestore write fails.
-      console.warn('Failed to persist profile update to Firestore:', err);
     }
+
+    setProfile(nextProfile);
   };
 
   const addToCart = (item: Omit<CartItem, 'quantity'>) => {

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useData } from '../context/DataContext';
@@ -38,6 +38,15 @@ export const ProfilePage: React.FC = () => {
   const [saving, setSaving] = useState(false);
   const [savedSuccess, setSavedSuccess] = useState(false);
 
+  useEffect(() => {
+    if (!profile) return;
+    setDisplayName(profile.displayName || user?.displayName || '');
+    setCollege(profile.college || '');
+    setDepartment(profile.department || ECE_DEPARTMENTS[0]);
+    setYear(profile.year || COLLEGE_YEARS[2]);
+    setPhone(profile.phone || '');
+  }, [profile, user?.displayName]);
+
   if (!user) {
     return (
       <div className="min-h-screen bg-pcb-grid flex flex-col items-center justify-center p-6 text-slate-800">
@@ -46,7 +55,7 @@ export const ProfilePage: React.FC = () => {
             <img 
               src="/ece-logo.png" 
               alt="ECE Hub Logo" 
-              className="h-20 sm:h-24 w-auto object-contain drop-shadow-xs" 
+              className="h-24 sm:h-28 w-auto object-contain drop-shadow-xs" 
             />
           </div>
           <div>
@@ -101,27 +110,29 @@ export const ProfilePage: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-pcb-grid text-slate-900 py-8 px-4 sm:px-6 lg:px-8 pb-24 md:pb-16 max-w-4xl mx-auto space-y-8">
+    <div className="min-h-screen bg-pcb-grid text-slate-900 py-5 sm:py-8 px-3.5 sm:px-6 lg:px-8 pb-24 md:pb-16 max-w-5xl mx-auto space-y-5 sm:space-y-7">
       
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <div className="w-12 h-12 rounded-2xl bg-orange-100 border border-orange-200 flex items-center justify-center text-orange-700 font-mono font-bold text-lg shadow-2xs">
+      <div className="bg-gradient-to-br from-slate-950 via-slate-900 to-blue-950 text-white rounded-2xl p-4 sm:p-6 shadow-lg shadow-slate-900/10">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div className="flex items-center gap-3 min-w-0">
+          <div className="w-12 h-12 sm:w-14 sm:h-14 shrink-0 rounded-2xl bg-blue-400/15 border border-blue-200/20 flex items-center justify-center text-blue-200 font-bold text-lg shadow-sm">
             {(profile?.displayName || user.displayName || 'E')[0].toUpperCase()}
           </div>
-          <div>
-            <h1 className="text-xl sm:text-2xl font-bold text-slate-950 font-mono">
+          <div className="min-w-0">
+            <p className="text-[10px] uppercase tracking-widest font-semibold text-blue-200">Student profile</p>
+            <h1 className="text-xl sm:text-2xl font-bold text-white truncate">
               {profile?.displayName || 'Engineer Profile'}
             </h1>
-            <p className="text-xs text-slate-500">{profile?.email || user.email}</p>
+            <p className="text-xs text-slate-300 truncate">{profile?.email || user.email}</p>
           </div>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <button
             type="button"
             onClick={() => updateUserProfile({ onboarded: false })}
-            className="px-3.5 py-1.5 rounded-xl border border-orange-200 bg-orange-50 hover:bg-orange-100 text-orange-700 text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer"
+            className="px-3 py-2 rounded-xl border border-white/20 bg-white/10 hover:bg-white/15 text-white text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer"
             title="Re-open the student setup form"
           >
             <Sparkles className="w-3.5 h-3.5" />
@@ -131,16 +142,27 @@ export const ProfilePage: React.FC = () => {
 
           <button
             onClick={() => logout()}
-            className="px-3.5 py-1.5 rounded-xl border border-rose-200 bg-rose-50 hover:bg-rose-100 text-rose-700 text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer"
+            className="px-3 py-2 rounded-xl border border-rose-200/30 bg-rose-500/10 hover:bg-rose-500/20 text-rose-100 text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer"
           >
             <LogOut className="w-3.5 h-3.5" />
             <span>Sign Out</span>
           </button>
         </div>
       </div>
+        <div className="grid grid-cols-2 gap-2 sm:gap-3 mt-5">
+          <div className="rounded-xl bg-white/5 border border-white/10 p-3">
+            <span className="block text-[10px] uppercase tracking-wider text-slate-300">Tracked skills</span>
+            <span className="text-lg font-bold text-white">{studentSkills.length}</span>
+          </div>
+          <div className="rounded-xl bg-white/5 border border-white/10 p-3">
+            <span className="block text-[10px] uppercase tracking-wider text-slate-300">Achievements</span>
+            <span className="text-lg font-bold text-white">{badges.length}</span>
+          </div>
+        </div>
+      </div>
 
       {/* Main Edit Form */}
-      <form onSubmit={handleSave} className="bg-white border border-stone-200 rounded-2xl p-6 shadow-sm space-y-6 text-xs">
+      <form onSubmit={handleSave} className="bg-white border border-slate-200 rounded-2xl p-4 sm:p-6 shadow-sm space-y-5 sm:space-y-6 text-xs">
         <div className="flex items-center justify-between border-b border-stone-100 pb-3">
           <h2 className="text-xs font-mono uppercase font-bold text-slate-700 tracking-wider">
             Academic & Contact Details
@@ -165,7 +187,7 @@ export const ProfilePage: React.FC = () => {
           </div>
 
           <div>
-            <label className="block text-slate-700 font-medium mb-1">Google Email (Fixed)</label>
+            <label className="block text-slate-700 font-medium mb-1">            Student Email</label>
             <input
               type="email"
               disabled
@@ -228,7 +250,7 @@ export const ProfilePage: React.FC = () => {
           <button
             type="submit"
             disabled={saving}
-            className="px-6 py-3 bg-orange-500 hover:bg-orange-600 text-white font-bold rounded-xl flex items-center gap-2 transition-all shadow-xs shadow-orange-500/25 active:scale-95 cursor-pointer"
+            className="w-full sm:w-auto px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl flex items-center justify-center gap-2 transition-all shadow-sm shadow-blue-500/25 active:scale-95 cursor-pointer"
           >
             <Save className="w-4 h-4" />
             <span>{saving ? 'Updating...' : 'Save Profile Changes'}</span>

@@ -1,7 +1,7 @@
-import React from 'react';
+import React, { useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { useData } from '../context/DataContext';
-import { useAuth } from '../context/AuthContext';
+import { ProjectImage } from '../components/common/ProjectImage';
 import { 
   Cpu, 
   Zap, 
@@ -10,132 +10,299 @@ import {
   Search, 
   ArrowRight, 
   Award, 
+  CheckCircle2,
   Wrench,
-  Sparkles,
-  Layers,
-  ShieldCheck,
-  ExternalLink
+  ExternalLink,
+  GraduationCap,
+  MoveUpRight,
+  Radio,
+  TrendingUp,
+  Play,
+  Clock3,
+  BookmarkCheck,
+  CirclePlay,
+  ChevronLeft,
+  ChevronRight
 } from 'lucide-react';
 
 export const LandingPage: React.FC = () => {
-  const { opportunities, projects } = useData();
-  const { user, login } = useAuth();
+  const { opportunities, projects, learningPaths, resources } = useData();
 
   const featuredOpps = opportunities.slice(0, 4);
-  const featuredProjs = projects.slice(0, 2);
+  const featuredProjs = projects.slice(0, 3);
+  const featuredLearningPath = learningPaths.find((path) => path.status === 'published');
+  const opportunityCards = [
+    {
+      title: 'Internships',
+      description: 'Get real industry experience.',
+      image: '/home-cards/internships.png',
+      alt: 'Students exploring engineering internship opportunities',
+      href: '/explore?tab=internships',
+      tag: 'Career start',
+    },
+    {
+      title: 'Training',
+      description: 'Build practical, job-ready skills.',
+      image: '/home-cards/real-time-projects.png',
+      alt: 'Students learning engineering skills through training',
+      href: '/explore?tab=trainings',
+      tag: 'Learn by doing',
+    },
+    {
+      title: 'Hackathons',
+      description: 'Create solutions with a team.',
+      image: '/home-cards/hackathons.png',
+      alt: 'Students collaborating on a hackathon project',
+      href: '/explore?tab=hackathons',
+      tag: 'Build together',
+    },
+    {
+      title: 'Resources',
+      description: 'Find guides, notes, and tutorials.',
+      image: '/home-cards/resources.png',
+      alt: 'Learning resources for electronics and communication students',
+      href: '/explore?tab=resources',
+      tag: 'Keep learning',
+    },
+    {
+      title: 'Real-time Projects',
+      description: 'Explore hands-on project ideas.',
+      image: '/home-cards/training.png',
+      alt: 'Student working on an embedded real-time project',
+      href: '/projects',
+      tag: 'Hands-on',
+    },
+    {
+      title: 'Components',
+      description: 'Explore parts for your next build.',
+      image: '/home-cards/components.png',
+      alt: 'Electronic components used to build circuits',
+      href: '/components',
+      tag: 'Explore hardware',
+    },
+  ];
+  const learningPathResources = featuredLearningPath
+    ? resources.filter((resource) => featuredLearningPath.resourceIds.includes(resource.id) && resource.status === 'published').slice(0, 3)
+    : resources.filter((resource) => resource.status === 'published').slice(0, 3);
+  const opportunityCardsRef = useRef<HTMLDivElement>(null);
+
+  const scrollOpportunityCards = (direction: 'left' | 'right') => {
+    opportunityCardsRef.current?.scrollBy({
+      left: direction === 'left' ? -340 : 340,
+      behavior: 'smooth',
+    });
+  };
 
   return (
-    <div className="min-h-screen bg-[#fafaf9] text-slate-900 flex flex-col font-sans">
+    <div className="min-h-screen bg-white text-slate-900 flex flex-col font-sans">
       
-      {/* HERO SECTION WITH DEDICATED ECE BACKGROUND IMAGE */}
-      <section className="relative pt-12 pb-16 md:pt-20 md:pb-24 px-4 sm:px-6 lg:px-8 w-full border-b bg-slate-950 border-slate-800 text-white transition-colors duration-300">
-        
-        {/* Full Background Image Layer */}
-        <div 
-          className="absolute inset-0 bg-cover bg-center bg-no-repeat pointer-events-none"
-          style={{ 
-            backgroundImage: `url('/ece-home-bg.svg')`,
-            opacity: 0.85
-          }}
-          aria-hidden="true"
-        />
+      {/* HERO */}
+      <section className="relative isolate overflow-hidden bg-[#fff8f1]">
+        <div className="pointer-events-none absolute inset-0 -z-10 bg-[radial-gradient(circle_at_80%_30%,rgba(251,146,60,0.17),transparent_32%),linear-gradient(135deg,#fffaf5_0%,#fff7ed_55%,#fff_100%)]" />
+        <div className="pointer-events-none absolute -left-24 top-24 -z-10 h-72 w-72 rounded-full border border-orange-200/60 sm:h-96 sm:w-96" />
+        <div className="pointer-events-none absolute -left-16 top-32 -z-10 h-56 w-56 rounded-full border border-orange-200/40 sm:h-80 sm:w-80" />
 
-        {/* Ambient Dark Overlay to ensure maximum text contrast and legibility */}
-        <div 
-          className="absolute inset-0 bg-gradient-to-b from-slate-950/75 via-slate-950/85 to-slate-950/98 pointer-events-none"
-          aria-hidden="true"
-        />
-
-        <div className="relative z-10 max-w-7xl mx-auto">
-          
-          <div className="text-center max-w-3xl mx-auto space-y-6">
-            
-            {/* Top Badge indicator */}
-            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full text-xs font-medium shadow-md backdrop-blur-md bg-slate-900/90 border border-orange-500/40 text-orange-300">
-              <span className="flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[11px] font-mono font-semibold bg-orange-950/60 text-orange-200 border border-orange-500/40">
-                <Cpu className="w-3.5 h-3.5 text-orange-400" />
-                <span>ECE & VLSI HUB</span>
-              </span>
-              <span className="text-slate-300">Electronics & Communication Engineering Portal</span>
+        <div className="mx-auto grid max-w-7xl items-center gap-10 px-4 pb-14 pt-10 sm:px-6 sm:pb-20 sm:pt-14 lg:grid-cols-[1fr_0.95fr] lg:gap-14 lg:px-8 lg:pb-24 lg:pt-20">
+          <div className="relative z-10 max-w-2xl animate-enter-soft">
+            <div className="inline-flex items-center gap-2 rounded-full border border-orange-200 bg-white/90 px-3 py-1.5 text-[11px] font-bold uppercase tracking-[0.13em] text-orange-800 shadow-sm sm:text-xs">
+              <Radio className="h-3.5 w-3.5 text-orange-600" />
+              Built for curious engineering students
             </div>
-
-            {/* Main Headline */}
-            <h1 className="text-3xl sm:text-5xl md:text-6xl font-extrabold tracking-tight text-white leading-tight">
-              Bridge the Gap from <br className="hidden sm:block" />
-              <span className="bg-gradient-to-r from-orange-400 via-amber-300 to-orange-500 bg-clip-text text-transparent">
-                Lab Schematics to Silicon Industry
+            <h1 className="mt-5 max-w-2xl text-[2.65rem] font-extrabold leading-[1.02] tracking-[-0.055em] text-slate-950 sm:mt-6 sm:text-6xl lg:text-[4.35rem]">
+              Learn skills that move your future{' '}
+              <span className="relative inline-block text-orange-600">
+                forward.
+                <span className="absolute -bottom-1 left-0 -z-10 h-3 w-full -rotate-1 rounded-full bg-orange-200/70 sm:h-4" />
               </span>
             </h1>
-
-            {/* Sub-headline */}
-            <p className="text-sm sm:text-base md:text-lg text-slate-300 max-w-2xl mx-auto leading-relaxed">
-              Curated hardware kits, live department recruitment drives, 
-              interactive skill radar tracking, and component pricing intelligence for ECE & VLSI engineers.
+            <p className="mt-5 max-w-xl text-sm leading-7 text-slate-600 sm:mt-6 sm:text-lg sm:leading-8">
+              Grow your engineering skills with guided learning, practical resources, and opportunities designed for students.
             </p>
 
-            {/* Quick Action CTAs */}
-            <div className="flex flex-col sm:flex-row items-center justify-center gap-3 pt-2">
+            <div className="mt-7 flex flex-col gap-3 sm:mt-8 sm:flex-row">
               <Link
-                to="/projects"
-                className="w-full sm:w-auto px-6 py-3.5 rounded-xl bg-orange-600 hover:bg-orange-500 text-white font-semibold text-sm shadow-lg shadow-orange-600/30 transition-all flex items-center justify-center gap-2 group"
+                to="/explore?tab=resources"
+                className="group inline-flex min-h-12 items-center justify-center gap-2 rounded-xl bg-orange-600 px-5 py-3 text-sm font-bold text-white shadow-lg shadow-orange-600/20 transition hover:-translate-y-0.5 hover:bg-orange-700 hover:shadow-xl hover:shadow-orange-600/25"
               >
-                <span>Browse 42 Lab Projects</span>
-                <ArrowRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
+                Start learning <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
               </Link>
-              
               <Link
-                to="/explore"
-                className="w-full sm:w-auto px-6 py-3.5 rounded-xl bg-slate-900/80 hover:bg-slate-800 text-slate-200 hover:text-white font-semibold text-sm border border-slate-700/80 shadow-md backdrop-blur-md transition-all flex items-center justify-center gap-2"
+                to="/explore?tab=internships"
+                className="inline-flex min-h-12 items-center justify-center gap-2 rounded-xl border border-orange-200 bg-white px-5 py-3 text-sm font-bold text-slate-800 shadow-sm transition hover:-translate-y-0.5 hover:border-orange-300 hover:bg-orange-50"
               >
-                <Search className="w-4 h-4 text-orange-400" />
-                <span>Explore Opportunities</span>
+                <Search className="h-4 w-4 text-orange-600" /> Find opportunities
               </Link>
             </div>
 
-            {/* Real Stats Highlights Grid */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4 max-w-3xl mx-auto pt-4">
-              <div className="p-4 rounded-xl border backdrop-blur-md bg-slate-900/80 border-slate-800/90 text-white shadow-lg">
-                <span className="text-2xl font-bold font-mono text-orange-400 block">42</span>
-                <span className="text-xs font-medium text-slate-400">Verified Lab Projects</span>
-              </div>
-              
-              <div className="p-4 rounded-xl border backdrop-blur-md bg-slate-900/80 border-slate-800/90 text-white shadow-lg">
-                <span className="text-2xl font-bold font-mono text-amber-400 block">21</span>
-                <span className="text-xs font-medium text-slate-400">ECE Specializations</span>
-              </div>
-              
-              <div className="p-4 rounded-xl border backdrop-blur-md bg-slate-900/80 border-slate-800/90 text-white shadow-lg">
-                <span className="text-2xl font-bold font-mono text-orange-400 block">100%</span>
-                <span className="text-xs font-medium text-slate-400">Hardware Kits & Schematics</span>
-              </div>
-              
-              <div className="p-4 rounded-xl border backdrop-blur-md bg-slate-900/80 border-slate-800/90 text-white shadow-lg">
-                <span className="text-2xl font-bold font-mono text-amber-400 block">24/7</span>
-                <span className="text-xs font-medium text-slate-400">Digital Access & Tracking</span>
+            <div className="mt-8 flex flex-wrap items-center gap-x-5 gap-y-3 border-t border-orange-200/70 pt-5 text-xs font-semibold text-slate-600 sm:mt-10 sm:gap-x-7 sm:pt-6">
+              <span className="inline-flex items-center gap-2"><CheckCircle2 className="h-4 w-4 text-orange-600" /> Learn at your own pace</span>
+              <span className="inline-flex items-center gap-2"><CheckCircle2 className="h-4 w-4 text-orange-600" /> Turn knowledge into opportunity</span>
+            </div>
+          </div>
+
+          <div className="relative mx-auto w-full max-w-[560px] animate-enter-soft [animation-delay:100ms]">
+            <div className="absolute -inset-5 rounded-[2.5rem] bg-orange-200/45 blur-2xl sm:-inset-8" />
+            <div className="absolute -right-2 top-8 z-10 hidden rotate-6 rounded-2xl bg-orange-500 px-4 py-3 text-white shadow-lg shadow-orange-500/25 sm:block">
+              <p className="text-[9px] font-bold uppercase tracking-wider text-orange-100">Keep growing</p>
+              <p className="mt-1 flex items-center gap-1.5 text-sm font-extrabold"><TrendingUp className="h-4 w-4" /> One skill at a time</p>
+            </div>
+
+            <div className="relative overflow-hidden rounded-[1.75rem] border border-orange-100 bg-white p-4 shadow-[0_30px_90px_-40px_rgba(124,45,18,0.38)] sm:rounded-[2rem] sm:p-6">
+              <div className="absolute -right-12 -top-12 h-40 w-40 rounded-full bg-orange-100/70 blur-2xl" />
+              <div className="relative">
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <span className="inline-flex items-center gap-1.5 rounded-full bg-orange-50 px-2.5 py-1 text-[9px] font-bold uppercase tracking-[0.14em] text-orange-800 sm:text-[10px]">
+                      <BookOpen className="h-3 w-3" /> Learning pathway
+                    </span>
+                    <h2 className="mt-3 text-xl font-extrabold tracking-tight text-slate-950 sm:text-2xl">
+                      {featuredLearningPath?.title || 'Build your engineering foundation'}
+                    </h2>
+                    <p className="mt-1 text-xs text-slate-500 sm:text-sm">
+                      Follow a clear path from fundamentals to hands-on skills.
+                    </p>
+                  </div>
+                  <span className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl bg-orange-500 text-white shadow-md shadow-orange-500/20 sm:h-12 sm:w-12">
+                    <GraduationCap className="h-5 w-5" />
+                  </span>
+                </div>
+
+                <div className="mt-5 rounded-2xl border border-orange-100 bg-[#fffaf5] p-3.5 sm:p-4">
+                  <div className="flex items-center justify-between gap-3">
+                    <div>
+                      <p className="text-[9px] font-bold uppercase tracking-[0.15em] text-orange-700">Your learning route</p>
+                      <p className="mt-1 text-sm font-bold text-slate-900">{featuredLearningPath?.level || 'Beginner'} · self-paced</p>
+                    </div>
+                    <span className="rounded-full border border-orange-100 bg-white px-2.5 py-1 text-[10px] font-semibold text-slate-600">
+                      {learningPaths.filter((path) => path.status === 'published').length} learning paths
+                    </span>
+                  </div>
+                  <div className="mt-4 space-y-2.5">
+                    {(learningPathResources.length > 0 ? learningPathResources : [
+                      { id: 'basics', title: 'Circuit fundamentals', type: 'guide' },
+                      { id: 'digital', title: 'Digital design essentials', type: 'video' },
+                      { id: 'tools', title: 'Tools & practical workflows', type: 'guide' },
+                    ]).map((resource, index) => (
+                      <div key={resource.id} className="flex items-center gap-3 rounded-xl border border-white bg-white px-3 py-2.5 shadow-sm">
+                        <span className={`grid h-8 w-8 shrink-0 place-items-center rounded-lg ${index === 0 ? 'bg-orange-500 text-white' : 'bg-orange-50 text-orange-700'}`}>
+                          {index === 0 ? <Play className="h-3.5 w-3.5 fill-current" /> : <CirclePlay className="h-4 w-4" />}
+                        </span>
+                        <span className="min-w-0 flex-1 truncate text-xs font-semibold text-slate-800 sm:text-sm">{resource.title}</span>
+                        <span className="shrink-0 text-[9px] font-semibold capitalize text-slate-400">{resource.type}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="mt-4 flex items-center justify-between gap-3">
+                  <div className="flex items-center gap-2 text-[10px] font-semibold text-slate-500 sm:text-xs">
+                    <BookmarkCheck className="h-4 w-4 text-orange-600" />
+                    <span>{resources.filter((resource) => resource.status === 'published').length} learning resources to explore</span>
+                  </div>
+                  <Link
+                    to="/explore?tab=resources"
+                    aria-label="Explore learning resources"
+                    className="inline-flex h-10 shrink-0 items-center gap-2 rounded-xl bg-orange-600 px-3 text-xs font-bold text-white shadow-sm transition hover:-translate-y-0.5 hover:bg-orange-700 sm:px-4"
+                  >
+                    Explore <MoveUpRight className="h-3.5 w-3.5" />
+                  </Link>
+                </div>
               </div>
             </div>
 
+            <div className="absolute -bottom-4 -left-2 z-10 flex items-center gap-2 rounded-xl border border-orange-100 bg-white px-3 py-2.5 shadow-xl shadow-orange-950/10 sm:-bottom-5 sm:-left-5 sm:gap-3 sm:px-4">
+              <span className="grid h-9 w-9 place-items-center rounded-xl bg-orange-100 text-orange-700">
+                <Clock3 className="h-4 w-4" />
+              </span>
+              <div>
+                <p className="text-[9px] font-bold uppercase tracking-wider text-orange-700">Learn at your pace</p>
+                <p className="text-[11px] font-bold text-slate-900 sm:text-xs">Start where you are</p>
+              </div>
+            </div>
           </div>
         </div>
       </section>
 
-      {/* FEATURED OPPORTUNITIES */}
-      <section className="py-12 bg-white border-b border-slate-200/80 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto w-full">
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mb-6 sm:mb-8">
+      {/* STUDENT OPPORTUNITY PATHWAYS */}
+      <section className="mx-auto w-full max-w-7xl border-b border-orange-100 bg-white px-4 py-14 sm:px-6 sm:py-16 lg:px-8">
+        <div className="mb-6 flex flex-col items-start justify-between gap-4 sm:mb-8 sm:flex-row sm:items-end">
           <div>
-            <div className="flex items-center gap-2 text-orange-600 text-xs font-mono uppercase tracking-wider mb-1 font-bold">
-              <Zap className="w-4 h-4" /> Live Roles
+            <div className="mb-2 flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.18em] text-orange-700 sm:text-xs">
+              <Zap className="h-4 w-4" /> Learn · Build · Grow
             </div>
-            <h2 className="text-xl sm:text-2xl font-extrabold text-slate-900 tracking-tight">
-              Featured Silicon & Firmware Openings
+            <h2 className="text-xl font-extrabold tracking-tight text-slate-950 sm:text-3xl">
+              Find your next opportunity
             </h2>
+            <p className="mt-2 max-w-2xl text-sm leading-relaxed text-slate-600">
+              Choose a path to learn new skills, gain experience, and bring your ideas to life.
+            </p>
           </div>
+          <div className="flex items-center gap-2 self-end">
+            <span className="mr-1 hidden text-xs font-medium text-slate-400 sm:inline">Swipe to explore</span>
+            <button
+              type="button"
+              aria-label="Scroll opportunity cards left"
+              onClick={() => scrollOpportunityCards('left')}
+              className="grid h-10 w-10 place-items-center rounded-full border border-orange-200 bg-white text-orange-700 transition hover:bg-orange-50"
+            >
+              <ChevronLeft className="h-5 w-5" />
+            </button>
+            <button
+              type="button"
+              aria-label="Scroll opportunity cards right"
+              onClick={() => scrollOpportunityCards('right')}
+              className="grid h-10 w-10 place-items-center rounded-full border border-orange-200 bg-white text-orange-700 transition hover:bg-orange-50"
+            >
+              <ChevronRight className="h-5 w-5" />
+            </button>
+          </div>
+        </div>
+
+        <div
+          ref={opportunityCardsRef}
+          className="flex snap-x snap-mandatory gap-4 overflow-x-auto overscroll-x-contain pb-4 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+          aria-label="Explore student learning and career paths"
+        >
+          {opportunityCards.map((card, index) => (
+            <Link
+              key={card.title}
+              to={card.href}
+              className="relative flex w-[82vw] max-w-[340px] shrink-0 snap-start flex-col overflow-hidden rounded-2xl border border-orange-100 bg-white shadow-sm sm:w-[calc((100%-1rem)/2)] sm:max-w-none lg:w-[calc((100%-2rem)/3)]"
+              aria-label={`Explore ${card.title}`}
+              style={{ animationDelay: `${index * 60}ms` }}
+            >
+              <div className="relative aspect-[16/9] w-full shrink-0 overflow-hidden bg-white">
+                <img
+                  src={card.image}
+                  alt={card.alt}
+                  loading="lazy"
+                  className="h-full w-full object-contain"
+                />
+                <span className="absolute left-3 top-3 rounded-full border border-white/40 bg-white/90 px-2.5 py-1 text-[9px] font-bold uppercase tracking-wider text-orange-800 shadow-sm backdrop-blur sm:left-4 sm:top-4">
+                  {card.tag}
+                </span>
+                <span className="absolute bottom-3 right-3 grid h-9 w-9 place-items-center rounded-full bg-orange-500 text-white shadow-md transition group-hover:translate-x-0.5 group-hover:bg-orange-400 sm:bottom-4 sm:right-4">
+                  <ArrowRight className="h-4 w-4" />
+                </span>
+              </div>
+              <div className="flex items-center justify-between gap-3 bg-white px-4 py-3.5 sm:px-5 sm:py-4">
+                <div className="min-w-0">
+                  <h3 className="truncate text-base font-bold text-slate-950 sm:text-lg">{card.title}</h3>
+                  <p className="mt-0.5 truncate text-xs text-slate-500 sm:text-sm">{card.description}</p>
+                </div>
+                <MoveUpRight className="h-4 w-4 shrink-0 text-orange-600" />
+              </div>
+            </Link>
+          ))}
+        </div>
+
+        <div className="mb-4 mt-5 flex items-center justify-between gap-3 border-t border-orange-100 pt-5">
+          <h3 className="text-base font-bold text-slate-900 sm:text-lg">Latest student openings</h3>
           <Link
-            to="/explore"
-            className="text-xs font-semibold text-orange-600 hover:text-orange-700 flex items-center gap-1"
+            to="/explore?tab=internships"
+            className="inline-flex shrink-0 items-center gap-1 text-xs font-semibold text-orange-700 hover:text-orange-800"
           >
-            <span>View all opportunities</span>
-            <ArrowRight className="w-3.5 h-3.5" />
+            Browse openings <ArrowRight className="h-3.5 w-3.5" />
           </Link>
         </div>
 
@@ -144,7 +311,7 @@ export const LandingPage: React.FC = () => {
             {featuredOpps.map((opp) => (
               <div
                 key={opp.id}
-                className="bg-white rounded-xl p-4 sm:p-5 border border-slate-200 hover:border-orange-300 shadow-xs transition-colors flex flex-col justify-between"
+                className="group flex flex-col justify-between rounded-2xl border border-orange-100 bg-gradient-to-br from-white to-[#fffaf5] p-4 shadow-sm transition duration-300 hover:-translate-y-1 hover:border-orange-300 hover:shadow-lg hover:shadow-orange-950/5 sm:p-5"
               >
                 <div>
                   <div className="flex items-center justify-between gap-2 mb-3">
@@ -153,7 +320,7 @@ export const LandingPage: React.FC = () => {
                         ? 'bg-orange-50 text-orange-700 border border-orange-200'
                         : opp.type === 'hackathon'
                         ? 'bg-amber-50 text-amber-700 border border-amber-200'
-                        : 'bg-slate-100 text-slate-700 border border-slate-200'
+                        : 'bg-orange-50 text-orange-700 border border-orange-200'
                     }`}>
                       {opp.type}
                     </span>
@@ -163,29 +330,29 @@ export const LandingPage: React.FC = () => {
                   <h3 className="text-sm sm:text-base font-bold text-slate-900 mb-1 line-clamp-1">
                     {opp.title}
                   </h3>
-                  <p className="text-xs font-semibold text-orange-600 mb-2 truncate">{opp.companyName}</p>
+                  <p className="mb-2 truncate text-xs font-semibold text-orange-700">{opp.companyName}</p>
 
                   <p className="text-xs text-slate-600 line-clamp-2 mb-3 leading-relaxed">
                     {opp.description}
                   </p>
 
-                  <div className="flex flex-wrap gap-1 mb-4">
+                  <div className="mb-4 flex flex-wrap gap-1">
                     {opp.skillIds.slice(0, 2).map((skill) => (
-                      <span key={skill} className="px-1.5 py-0.5 rounded bg-slate-50 border border-slate-200 text-[10px] text-slate-700 font-mono font-medium truncate max-w-full">
+                      <span key={skill} className="max-w-full truncate rounded-full border border-orange-100 bg-white px-2 py-1 font-mono text-[10px] font-medium text-slate-700">
                         {skill}
                       </span>
                     ))}
                   </div>
                 </div>
 
-                <div className="pt-3 border-t border-slate-100 flex items-center justify-between">
+                <div className="flex items-center justify-between border-t border-orange-100 pt-3">
                   <div>
                     <span className="text-[10px] text-slate-400 uppercase block font-mono font-medium">Stipend</span>
                     <span className="text-xs font-bold text-slate-900 truncate block">{opp.stipendOrFee}</span>
                   </div>
                   <Link
                     to={`/opportunity/${opp.id}`}
-                    className="px-3 py-1.5 rounded-lg bg-orange-50 hover:bg-orange-100 text-orange-700 text-xs font-semibold border border-orange-200 transition-colors"
+                    className="rounded-lg border border-orange-200 bg-white px-3 py-1.5 text-xs font-semibold text-orange-700 transition-colors hover:bg-orange-50"
                   >
                     Specs
                   </Link>
@@ -194,7 +361,7 @@ export const LandingPage: React.FC = () => {
             ))}
           </div>
         ) : (
-          <div className="p-8 sm:p-12 text-center bg-stone-50/70 border border-dashed border-stone-300 rounded-2xl">
+          <div className="rounded-2xl border border-dashed border-orange-200 bg-[#fffaf5] p-8 text-center sm:p-12">
             <div className="w-12 h-12 rounded-xl bg-orange-100 text-orange-600 flex items-center justify-center mx-auto mb-3">
               <Briefcase className="w-6 h-6" />
             </div>
@@ -214,14 +381,14 @@ export const LandingPage: React.FC = () => {
       </section>
 
       {/* 42 VERIFIED LAB PROJECTS CATALOG */}
-      <section className="py-12 sm:py-16 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto w-full">
+      <section className="mx-auto w-full max-w-7xl px-4 py-14 sm:px-6 sm:py-20 lg:px-8">
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mb-6 sm:mb-8">
           <div>
-            <div className="flex items-center gap-2 text-orange-600 text-xs font-mono uppercase tracking-wider mb-1 font-bold">
+            <div className="mb-2 flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.18em] text-orange-700 sm:text-xs">
               <Cpu className="w-4 h-4" /> 42 Verified Lab Projects
             </div>
-            <h2 className="text-xl sm:text-2xl font-extrabold text-slate-900 tracking-tight">
-              ECE & Lab Projects Catalog (42 Projects)
+            <h2 className="text-xl font-extrabold tracking-tight text-slate-950 sm:text-3xl">
+              Make something that matters
             </h2>
           </div>
           <Link
@@ -233,59 +400,36 @@ export const LandingPage: React.FC = () => {
           </Link>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-5 sm:gap-6">
+        <div className="grid grid-cols-2 gap-3 lg:grid-cols-3">
           {featuredProjs.map((proj) => {
-            const idNum = parseInt(proj.id.replace(/\D/g, '') || '1', 10);
-            const safeNum = Math.min(Math.max(idNum, 1), 42);
-            const code = `ECE-${String(safeNum).padStart(2, '0')}`;
-
             return (
               <div
                 key={proj.id}
-                className="bg-white rounded-xl p-4 sm:p-5 border border-slate-200 hover:border-orange-300 shadow-xs transition-colors flex flex-col sm:flex-row gap-4 justify-between"
+                className="group flex min-w-0 flex-col overflow-hidden rounded-xl border border-orange-100 bg-white shadow-sm transition duration-300 hover:-translate-y-1 hover:border-orange-300 hover:shadow-xl hover:shadow-orange-950/5 sm:rounded-2xl"
               >
-                <div className="w-full sm:w-44 h-28 sm:h-40 rounded-lg overflow-hidden bg-slate-900 shrink-0 relative flex items-center justify-center">
-                  <div className="flex flex-col items-center justify-center text-slate-500 gap-1 select-none pointer-events-none">
-                    <Cpu className="w-7 h-7 text-orange-500/50" />
-                    <span className="text-[10px] font-mono text-slate-400 font-semibold">{code}</span>
-                  </div>
-                  <img
-                    src={proj.images[0]}
-                    alt={proj.title}
-                    className="absolute inset-0 w-full h-full object-cover"
-                    onError={(e) => {
-                      e.currentTarget.onerror = null;
-                      e.currentTarget.style.display = 'none';
-                    }}
-                  />
-                  <span className="absolute top-2 left-2 px-2 py-0.5 rounded text-[10px] font-mono font-bold uppercase bg-slate-950/90 text-orange-400 border border-orange-500/30 z-10">
-                    {code}
-                  </span>
-                </div>
+                <ProjectImage project={proj} className="aspect-[4/3] w-full shrink-0 bg-orange-50" imageClassName="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-105" />
 
-                <div className="flex flex-col justify-between flex-1 min-w-0">
-                  <div>
-                    <h3 className="text-sm sm:text-base font-bold text-slate-900 mb-1 leading-snug line-clamp-2">
-                      {proj.title}
-                    </h3>
-                    <p className="text-xs text-slate-600 line-clamp-2 mb-3 leading-relaxed">
-                      {proj.description}
-                    </p>
-                    <div className="flex flex-wrap gap-1 mb-3">
-                      {proj.skillIds.slice(0, 2).map((s) => (
-                        <span key={s} className="px-1.5 py-0.5 rounded bg-orange-50 border border-orange-100 text-[10px] text-orange-700 font-mono">
-                          {s}
-                        </span>
-                      ))}
-                    </div>
+                <div className="flex min-w-0 flex-1 flex-col p-2 sm:p-4">
+                  <h3 className="mb-1 line-clamp-2 text-[11px] font-bold leading-snug text-slate-950 transition-colors group-hover:text-orange-700 sm:mb-2 sm:text-base">
+                    {proj.title}
+                  </h3>
+                  <p className="mb-2 line-clamp-2 text-[9px] leading-relaxed text-slate-600 sm:mb-3 sm:text-xs">
+                    {proj.description}
+                  </p>
+                  <div className="mb-2 hidden flex-wrap gap-1 sm:mb-3 sm:flex">
+                    {proj.skillIds.slice(0, 2).map((s) => (
+                      <span key={s} className="max-w-full truncate rounded border border-orange-100 bg-orange-50 px-1.5 py-0.5 font-mono text-[10px] text-orange-700">
+                        {s}
+                      </span>
+                    ))}
                   </div>
-                  <div className="flex items-center justify-between gap-2 pt-2 border-t border-slate-100">
-                    <span className="text-base sm:text-lg font-bold font-mono text-orange-600">
+                  <div className="mt-auto border-t border-orange-100 pt-2">
+                    <span className="block truncate font-mono text-xs font-bold text-orange-600 sm:text-lg">
                       ₹{proj.price.toLocaleString('en-IN')}
                     </span>
                     <Link
                       to={`/project/${proj.id}`}
-                      className="px-3.5 py-1.5 rounded-lg bg-orange-600 hover:bg-orange-700 text-white font-semibold text-xs transition-colors shadow-2xs"
+                      className="mt-2 flex w-full items-center justify-center rounded-lg bg-orange-600 px-2 py-2 text-center text-[10px] font-semibold text-white shadow-2xs transition-colors hover:bg-orange-700 sm:mt-3 sm:rounded-xl sm:py-2.5 sm:text-xs"
                     >
                       View Package
                     </Link>
@@ -297,7 +441,7 @@ export const LandingPage: React.FC = () => {
         </div>
 
         {/* Customization Callout */}
-        <div className="mt-8 bg-gradient-to-r from-orange-50 via-amber-50/50 to-orange-50 border border-orange-200/80 rounded-2xl p-5 sm:p-6 flex flex-col sm:flex-row items-center justify-between gap-4 shadow-xs">
+        <div className="mt-8 flex flex-col items-start justify-between gap-4 rounded-2xl border border-orange-200/80 bg-gradient-to-r from-orange-50 via-white to-amber-50 p-5 shadow-sm sm:flex-row sm:items-center sm:p-6">
           <div className="flex items-center gap-4">
             <div className="w-11 h-11 rounded-xl bg-orange-600 text-white flex items-center justify-center shrink-0 shadow-xs">
               <Wrench className="w-5 h-5" />
@@ -323,7 +467,7 @@ export const LandingPage: React.FC = () => {
             </a>
             <Link
               to="/projects?tab=custom"
-              className="px-3.5 py-2.5 bg-white hover:bg-stone-50 text-slate-700 border border-stone-200 text-xs font-semibold rounded-xl shadow-xs transition-colors flex items-center gap-1"
+              className="flex items-center gap-1 rounded-xl border border-orange-200 bg-white px-3.5 py-2.5 text-xs font-semibold text-slate-700 shadow-sm transition-colors hover:bg-orange-50"
             >
               <span>View Specs</span>
               <ArrowRight className="w-3.5 h-3.5" />
@@ -333,10 +477,11 @@ export const LandingPage: React.FC = () => {
       </section>
 
       {/* 4-STEP HARDWARE ACCELERATOR PATHWAY */}
-      <section className="py-12 sm:py-16 bg-white border-t border-slate-200/80 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto w-full">
+      <section className="mx-auto w-full max-w-7xl border-t border-orange-100 bg-[#fffaf5] px-4 py-14 sm:px-6 sm:py-20 lg:px-8">
         <div className="text-center max-w-2xl mx-auto mb-10">
-          <h2 className="text-xl sm:text-3xl font-extrabold text-slate-900 mb-2">
-            Engineered for High-Placement Yield
+          <p className="mb-2 text-[10px] font-bold uppercase tracking-[0.18em] text-orange-700 sm:text-xs">One hub, more momentum</p>
+          <h2 className="mb-2 text-xl font-extrabold text-slate-950 sm:text-3xl">
+            A clear path from learning to doing
           </h2>
           <p className="text-xs sm:text-sm text-slate-500 leading-relaxed">
             From transistor fundamentals to landing Tier-1 VLSI & embedded systems engineering roles.
@@ -344,8 +489,8 @@ export const LandingPage: React.FC = () => {
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          <div className="p-5 rounded-xl bg-slate-50 border border-slate-200 relative">
-            <span className="text-xl font-mono font-bold text-slate-300 absolute top-3 right-4">01</span>
+          <div className="group relative rounded-2xl border border-orange-100 bg-white p-5 shadow-sm transition duration-300 hover:-translate-y-1 hover:border-orange-300 hover:shadow-lg">
+            <span className="absolute right-4 top-3 font-mono text-xl font-bold text-orange-200 transition-colors group-hover:text-orange-400">01</span>
             <div className="w-10 h-10 rounded-lg bg-orange-100 text-orange-700 flex items-center justify-center mb-3">
               <Briefcase className="w-5 h-5" />
             </div>
@@ -355,19 +500,19 @@ export const LandingPage: React.FC = () => {
             </p>
           </div>
 
-          <div className="p-5 rounded-xl bg-slate-50 border border-slate-200 relative">
-            <span className="text-xl font-mono font-bold text-slate-300 absolute top-3 right-4">02</span>
+          <div className="group relative rounded-2xl border border-orange-100 bg-white p-5 shadow-sm transition duration-300 hover:-translate-y-1 hover:border-orange-300 hover:shadow-lg">
+            <span className="absolute right-4 top-3 font-mono text-xl font-bold text-orange-200 transition-colors group-hover:text-orange-400">02</span>
             <div className="w-10 h-10 rounded-lg bg-orange-100 text-orange-700 flex items-center justify-center mb-3">
               <Award className="w-5 h-5" />
             </div>
-            <h3 className="text-sm font-bold text-slate-900 mb-1">Skill Radar</h3>
+            <h3 className="text-sm font-bold text-slate-900 mb-1">Student Activity</h3>
             <p className="text-xs text-slate-600 leading-relaxed">
-              Track skill radar points for applied roles, completed labs, and verified certificates.
+              Keep track of applications, completed learning, and certificates in one place.
             </p>
           </div>
 
-          <div className="p-5 rounded-xl bg-slate-50 border border-slate-200 relative">
-            <span className="text-xl font-mono font-bold text-slate-300 absolute top-3 right-4">03</span>
+          <div className="group relative rounded-2xl border border-orange-100 bg-white p-5 shadow-sm transition duration-300 hover:-translate-y-1 hover:border-orange-300 hover:shadow-lg">
+            <span className="absolute right-4 top-3 font-mono text-xl font-bold text-orange-200 transition-colors group-hover:text-orange-400">03</span>
             <div className="w-10 h-10 rounded-lg bg-orange-100 text-orange-700 flex items-center justify-center mb-3">
               <Search className="w-5 h-5" />
             </div>
@@ -377,8 +522,8 @@ export const LandingPage: React.FC = () => {
             </p>
           </div>
 
-          <div className="p-5 rounded-xl bg-slate-50 border border-slate-200 relative">
-            <span className="text-xl font-mono font-bold text-slate-300 absolute top-3 right-4">04</span>
+          <div className="group relative rounded-2xl border border-orange-100 bg-white p-5 shadow-sm transition duration-300 hover:-translate-y-1 hover:border-orange-300 hover:shadow-lg">
+            <span className="absolute right-4 top-3 font-mono text-xl font-bold text-orange-200 transition-colors group-hover:text-orange-400">04</span>
             <div className="w-10 h-10 rounded-lg bg-orange-100 text-orange-700 flex items-center justify-center mb-3">
               <BookOpen className="w-5 h-5" />
             </div>
@@ -390,40 +535,35 @@ export const LandingPage: React.FC = () => {
         </div>
       </section>
 
-      {/* FINAL CALL TO ACTION */}
-      <section className="py-14 px-4 sm:px-6 lg:px-8 max-w-4xl mx-auto text-center w-full">
-        <div 
-          className="p-8 sm:p-12 rounded-2xl bg-slate-950 text-white border border-slate-800 shadow-xl relative overflow-hidden bg-cover bg-center"
-          style={{ backgroundImage: `url('/ece-home-bg.svg')` }}
-        >
-          {/* Subtle overlay for CTA */}
-          <div className="absolute inset-0 bg-slate-950/85 backdrop-blur-[1px] pointer-events-none" />
-
-          <div className="relative z-10 space-y-4">
-            <h2 className="text-2xl sm:text-4xl font-extrabold text-white">
-              Ready to Power Up Your Circuit Career?
+      {/* EXPLORE THE CIRCUIT HUB */}
+      <section className="mx-auto w-full max-w-7xl px-4 py-14 sm:px-6 sm:py-20 lg:px-8">
+        <div className="relative overflow-hidden rounded-[1.75rem] border border-orange-200 bg-gradient-to-br from-orange-50 via-white to-amber-50 px-5 py-8 shadow-sm sm:rounded-[2rem] sm:px-12 sm:py-12">
+          <div className="mx-auto max-w-3xl text-center">
+            <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-orange-200 bg-white/80 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.14em] text-orange-700 sm:text-xs">
+              <Radio className="h-3.5 w-3.5" />
+              Your next step starts here
+            </div>
+            <h2 className="text-2xl font-extrabold text-slate-950 sm:text-4xl">
+              Learn a skill. Build a project. Find your path.
             </h2>
-            <p className="text-xs sm:text-sm text-slate-300 max-w-lg mx-auto">
-              Join Indian engineering students learning real silicon skills and tracking industrial internships.
+            <p className="mx-auto mt-3 max-w-xl text-xs leading-relaxed text-slate-600 sm:text-sm">
+              Explore practical resources, hands-on ECE projects, and opportunities to grow your engineering career.
             </p>
-            <div className="pt-2">
-              {user ? (
-                <Link
-                  to="/explore"
-                  className="inline-flex items-center gap-2 px-6 py-3.5 rounded-xl bg-orange-600 hover:bg-orange-500 text-white font-semibold text-sm shadow-md transition-all"
-                >
-                  <span>Go to Circuit Hub</span>
-                  <ArrowRight className="w-4 h-4" />
-                </Link>
-              ) : (
-                <button
-                  onClick={() => login()}
-                  className="inline-flex items-center gap-2 px-6 py-3.5 rounded-xl bg-orange-600 hover:bg-orange-500 text-white font-semibold text-sm shadow-md transition-all cursor-pointer"
-                >
-                  <span>Sign in with Google</span>
-                  <ArrowRight className="w-4 h-4" />
-                </button>
-              )}
+            <div className="mt-6 flex flex-col justify-center gap-2.5 sm:flex-row">
+              <Link
+                to="/explore"
+                className="inline-flex items-center justify-center gap-2 rounded-xl bg-orange-600 px-5 py-3 text-xs font-semibold text-white shadow-md transition-all hover:bg-orange-500 sm:text-sm"
+              >
+                Explore learning & opportunities
+                <ArrowRight className="h-4 w-4" />
+              </Link>
+              <Link
+                to="/projects"
+                className="inline-flex items-center justify-center gap-2 rounded-xl border border-orange-200 bg-white px-5 py-3 text-xs font-semibold text-slate-800 transition-colors hover:bg-orange-50 sm:text-sm"
+              >
+                Browse project packages
+                <ArrowRight className="h-4 w-4 text-orange-600" />
+              </Link>
             </div>
           </div>
         </div>

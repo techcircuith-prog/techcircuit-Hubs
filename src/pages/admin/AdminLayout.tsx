@@ -14,7 +14,8 @@ import {
   X, 
   ShieldCheck, 
   Compass, 
-  Layers 
+  Layers,
+  Activity,
 } from 'lucide-react';
 
 export const AdminLayout: React.FC = () => {
@@ -58,28 +59,30 @@ export const AdminLayout: React.FC = () => {
     { label: 'Learning Paths', path: '/admin/learning-paths', icon: Compass },
     { label: 'Lab Projects', path: '/admin/projects', icon: Cpu },
     { label: 'Orders & Fulfillment', path: '/admin/orders', icon: ShoppingBag },
+    { label: 'Student Activity', path: '/admin/activity', icon: Activity },
     { label: 'Students Roster', path: '/admin/students', icon: Users },
     { label: 'Settings & Config', path: '/admin/settings', icon: Settings },
   ];
 
   return (
-    <div className="min-h-screen bg-[#fafaf9] text-slate-900 flex flex-col md:flex-row font-sans">
+    <div className="min-h-screen bg-white text-slate-900 flex flex-col md:flex-row font-sans">
       
       {/* Mobile Top Bar */}
-      <div className="md:hidden flex items-center justify-between p-4 bg-white border-b border-orange-100 sticky top-0 z-50 shadow-xs">
+      <div className="md:hidden flex items-center justify-between p-3.5 bg-orange-600 border-b border-orange-700 sticky top-0 z-50 shadow-lg">
         <Link to="/" className="flex items-center gap-2">
           <img 
             src="/ece-logo.png" 
             alt="ECE Hub Logo" 
-            className="h-12 sm:h-14 w-auto object-contain" 
+            className="h-10 sm:h-12 w-auto rounded-lg bg-white px-1 object-contain" 
           />
-          <span className="text-[10px] font-mono text-orange-600 uppercase tracking-wider font-bold bg-orange-50 px-1.5 py-0.5 rounded border border-orange-200">
+          <span className="text-[10px] font-mono text-orange-700 uppercase tracking-wider font-bold bg-white px-2 py-1 rounded-lg border border-white">
             ADMIN
           </span>
         </Link>
         <button
           onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-          className="p-2 text-slate-500 hover:text-slate-900 cursor-pointer"
+          aria-label={mobileMenuOpen ? 'Close admin menu' : 'Open admin menu'}
+          className="p-2 text-white/90 hover:text-white cursor-pointer"
         >
           {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
         </button>
@@ -87,27 +90,27 @@ export const AdminLayout: React.FC = () => {
 
       {/* Sidebar for Desktop / Drawer for Mobile */}
       <aside className={`
-        fixed inset-y-0 left-0 z-40 w-64 bg-white border-r border-orange-100 p-5 flex flex-col justify-between transition-transform duration-300 md:static md:translate-x-0 shadow-xs
+        fixed inset-y-0 left-0 z-40 w-64 bg-orange-600 border-r border-orange-700 p-4 sm:p-5 flex flex-col justify-between transition-transform duration-300 md:static md:translate-x-0 shadow-xl
         ${mobileMenuOpen ? 'translate-x-0' : '-translate-x-full'}
       `}>
         <div>
           {/* Admin Header */}
-          <div className="pb-5 mb-4 border-b border-stone-100">
+          <div className="pb-5 mb-4 border-b border-orange-500">
             <Link to="/" className="block mb-2.5">
               <img 
                 src="/ece-logo.png" 
                 alt="ECE Hub Logo" 
-                className="h-16 w-auto object-contain" 
+                className="h-14 w-auto rounded-lg bg-white px-1 object-contain" 
               />
             </Link>
             <div className="flex items-center justify-between">
-              <span className="text-[10px] font-mono text-orange-600 uppercase tracking-wider font-semibold">Admin Console</span>
-              <span className="px-1.5 py-0.5 rounded text-[9px] bg-orange-100 text-orange-700 font-mono font-bold">SYS_ROOT</span>
+              <span className="text-[10px] font-mono text-white/90 uppercase tracking-wider font-semibold">Admin Console</span>
+              <span className="px-2 py-1 rounded-md text-[9px] bg-white text-orange-700 font-mono font-bold">CONTROL</span>
             </div>
           </div>
 
           {/* Navigation Links */}
-          <nav className="space-y-1">
+          <nav className="space-y-1.5">
             {navItems.map((item) => {
               const Icon = item.icon;
               return (
@@ -119,8 +122,8 @@ export const AdminLayout: React.FC = () => {
                   className={({ isActive }) =>
                     `flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-medium transition-colors ${
                       isActive
-                        ? 'bg-orange-50 text-orange-700 border border-orange-200 font-semibold'
-                        : 'text-slate-600 hover:text-slate-950 hover:bg-stone-50'
+                        ? 'bg-white text-orange-700 shadow-lg shadow-orange-900/20 font-semibold'
+                        : 'text-white/90 hover:text-white hover:bg-orange-500'
                     }`
                   }
                 >
@@ -133,14 +136,14 @@ export const AdminLayout: React.FC = () => {
         </div>
 
         {/* Footer in Admin Sidebar */}
-        <div className="pt-4 border-t border-stone-100 space-y-2">
+        <div className="pt-4 border-t border-orange-500 space-y-2">
           <NavLink
             to="/"
-            className="w-full py-2 px-3 rounded-lg border border-orange-200 bg-orange-50 hover:bg-orange-100 text-orange-700 text-xs font-semibold flex items-center justify-center gap-1.5 transition-colors"
+            className="w-full py-2.5 px-3 rounded-xl border border-white/70 bg-white hover:bg-orange-50 text-orange-700 text-xs font-semibold flex items-center justify-center gap-1.5 transition-colors"
           >
             ← View Student Portal
           </NavLink>
-          <div className="text-[11px] text-slate-500 font-mono truncate">
+          <div className="text-[11px] text-white/90 font-mono truncate px-1">
             Admin: {user.displayName || 'Authorized Administrator'}
           </div>
           <button
@@ -148,7 +151,7 @@ export const AdminLayout: React.FC = () => {
               logout();
               navigate('/');
             }}
-            className="w-full py-2 px-3 rounded-lg border border-rose-200 bg-rose-50 hover:bg-rose-100 text-rose-700 text-xs font-semibold flex items-center justify-center gap-2 transition-colors cursor-pointer"
+            className="w-full py-2.5 px-3 rounded-xl border border-white/70 bg-white hover:bg-orange-50 text-orange-700 text-xs font-semibold flex items-center justify-center gap-2 transition-colors cursor-pointer"
           >
             <LogOut className="w-3.5 h-3.5" />
             <span>Sign Out Admin</span>
@@ -157,8 +160,10 @@ export const AdminLayout: React.FC = () => {
       </aside>
 
       {/* Main Content Area */}
-      <main className="flex-1 p-4 sm:p-6 lg:p-8 max-w-7xl w-full overflow-y-auto bg-[#fafaf9]">
-        <Outlet />
+      <main className="flex-1 p-3 sm:p-6 lg:p-8 max-w-7xl w-full overflow-y-auto bg-white">
+        <div className="mx-auto w-full max-w-6xl">
+          <Outlet />
+        </div>
       </main>
 
     </div>

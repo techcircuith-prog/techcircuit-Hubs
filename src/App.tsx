@@ -1,10 +1,9 @@
-import React from 'react';
-import { BrowserRouter, Routes, Route, Navigate, Outlet } from 'react-router-dom';
+import React, { useEffect } from 'react';
+import { BrowserRouter, Routes, Route, Navigate, Outlet, useLocation } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
 import { DataProvider } from './context/DataContext';
 
 import { Navbar } from './components/layout/Navbar';
-import { BottomNav } from './components/layout/BottomNav';
 import { Footer } from './components/layout/Footer';
 import { OnboardingModal } from './components/modals/OnboardingModal';
 
@@ -16,7 +15,6 @@ import { ProjectsPage } from './pages/ProjectsPage';
 import { ProjectDetailPage } from './pages/ProjectDetailPage';
 import { CartCheckoutPage } from './pages/CartCheckoutPage';
 import { PaymentReturnPage } from './pages/PaymentReturnPage';
-import { SkillsDashboardPage } from './pages/SkillsDashboardPage';
 import { ComponentsPage } from './pages/ComponentsPage';
 import { StudentDashboardPage } from './pages/StudentDashboardPage';
 import { ProfilePage } from './pages/ProfilePage';
@@ -35,6 +33,7 @@ import { AdminProjects } from './pages/admin/AdminProjects';
 import { AdminOrders } from './pages/admin/AdminOrders';
 import { AdminStudents } from './pages/admin/AdminStudents';
 import { AdminSettings } from './pages/admin/AdminSettings';
+import { AdminActivity } from './pages/admin/AdminActivity';
 
 const StudentLayout: React.FC = () => {
   return (
@@ -44,15 +43,25 @@ const StudentLayout: React.FC = () => {
         <Outlet />
       </main>
       <Footer />
-      <BottomNav />
       <OnboardingModal />
     </div>
   );
 };
 
+const ScrollToTop: React.FC = () => {
+  const { pathname } = useLocation();
+
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [pathname]);
+
+  return null;
+};
+
 export default function App() {
   return (
     <BrowserRouter>
+      <ScrollToTop />
       <AuthProvider>
         <DataProvider>
           <Routes>
@@ -65,7 +74,7 @@ export default function App() {
               <Route path="/project/:id" element={<ProjectDetailPage />} />
               <Route path="/cart" element={<CartCheckoutPage />} />
               <Route path="/payment/return" element={<PaymentReturnPage />} />
-              <Route path="/skills" element={<SkillsDashboardPage />} />
+              <Route path="/skills" element={<Navigate to="/dashboard" replace />} />
               <Route path="/components" element={<ComponentsPage />} />
               <Route path="/dashboard" element={<StudentDashboardPage />} />
               <Route path="/profile" element={<ProfilePage />} />
@@ -86,6 +95,7 @@ export default function App() {
               <Route path="learning-paths" element={<AdminLearningPaths />} />
               <Route path="projects" element={<AdminProjects />} />
               <Route path="orders" element={<AdminOrders />} />
+              <Route path="activity" element={<AdminActivity />} />
               <Route path="students" element={<AdminStudents />} />
               <Route path="settings" element={<AdminSettings />} />
             </Route>

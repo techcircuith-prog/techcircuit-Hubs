@@ -168,7 +168,8 @@ export const StudentLoginPage: React.FC = () => {
     setIsUnauthorizedDomain(false);
     setIsGoogleLoading(true);
     try {
-      await login();
+      const completed = await login();
+      if (!completed) return;
       navigate('/dashboard', { replace: true });
     } catch (err: any) {
       console.error('Google sign in error:', err);
@@ -208,7 +209,7 @@ export const StudentLoginPage: React.FC = () => {
               <img
                 src="/ece-logo.png"
                 alt="ECE Hub Logo"
-                className="h-20 sm:h-24 w-auto .max-w-[280px] object-contain drop-shadow-sm"
+                className="h-24 sm:h-28 w-auto max-w-[280px] object-contain drop-shadow-sm"
               />
             </Link>
           </div>

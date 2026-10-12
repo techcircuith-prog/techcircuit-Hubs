@@ -2,6 +2,7 @@ import express, { Request, Response } from 'express';
 import crypto from 'crypto';
 import dns from 'dns/promises';
 import { z } from 'zod';
+import { getAdminFirestore } from './admin';
 
 export const apiRouter = express.Router();
 apiRouter.use(express.json({
@@ -11,10 +12,6 @@ apiRouter.use(express.json({
 }));
 
 // Environment variables
-const ADMIN_EMAILS = (process.env.ADMIN_EMAILS || 'rock86367@gmail.com')
-  .split(',')
-  .map(e => e.trim().toLowerCase());
-
 const NEXAR_CLIENT_ID = process.env.NEXAR_CLIENT_ID || '';
 const NEXAR_CLIENT_SECRET = process.env.NEXAR_CLIENT_SECRET || '';
 const CASHFREE_APP_ID = process.env.CASHFREE_APP_ID || '';
@@ -51,102 +48,8 @@ function rateLimit(limit: number, windowMs: number) {
   };
 }
 
-// Admin verification helper
-function isEmailAdmin(email?: string): boolean {
-  if (!email) return false;
-  return ADMIN_EMAILS.includes(email.trim().toLowerCase());
-}
-
 // ---------------------------------------------
-// 1. ADMIN CHECK & MANAGEMENT
-// ---------------------------------------------
-apiRouter.post('/admin/login', (req: Request, res: Response) => {
-  const { username, password } = req.body;
-  if (!username || !password) {
-    return res.status(400).json({ error: 'Username/Email and Password are required.' });
-  }
-
-  const cleanUser = String(username).trim().toLowerCase();
-  const cleanPass = String(password).trim();
-
-  // Primary credentials requested by administrator:
-  // tech@admin (or tech@admin.com) with password adminpassword123
-  const isMatch = (cleanUser === 'tech@admin' || cleanUser === 'tech@admin.com') && cleanPass === 'adminpassword123';
-
-  if (!isMatch) {
-    return res.status(401).json({ error: 'Invalid administrator credentials.' });
-  }
-
-  // Ensure admin email is in the ADMIN_EMAILS list
-  if (!ADMIN_EMAILS.includes('tech@admin')) {
-    ADMIN_EMAILS.push('tech@admin');
-  }
-
-  // Issue session token and user profile
-  const adminUser = {
-    uid: 'admin_tech_root',
-    email: 'tech@admin',
-    displayName: 'Tech CircuitHub Admin',
-    role: 'admin',
-    isAdmin: true,
-  };
-
-  return res.json({
-    success: true,
-    user: adminUser,
-    token: `circuithub_adm_${Buffer.from(cleanUser + ':' + Date.now()).toString('base64')}`,
-  });
-});
-
-apiRouter.post('/admin/check', (req: Request, res: Response) => {
-  const { email } = req.body;
-  if (!email) return res.status(400).json({ isAdmin: false });
-  const isAdmin = isEmailAdmin(email) || email === 'tech@admin' || email === 'tech@admin.com';
-  return res.json({ isAdmin });
-});
-
-apiRouter.get('/admin/list', (req: Request, res: Response) => {
-  const requesterEmail = req.headers['x-user-email'] as string;
-  if (!isEmailAdmin(requesterEmail)) {
-    return res.status(403).json({ error: 'Unauthorized' });
-  }
-  return res.json({ adminEmails: ADMIN_EMAILS });
-});
-
-apiRouter.post('/admin/add', (req: Request, res: Response) => {
-  const requesterEmail = req.headers['x-user-email'] as string;
-  if (!isEmailAdmin(requesterEmail)) {
-    return res.status(403).json({ error: 'Unauthorized' });
-  }
-  const { email } = req.body;
-  if (!email || typeof email !== 'string') return res.status(400).json({ error: 'Invalid email' });
-  const normalized = email.trim().toLowerCase();
-  if (!ADMIN_EMAILS.includes(normalized)) {
-    ADMIN_EMAILS.push(normalized);
-  }
-  return res.json({ success: true, adminEmails: ADMIN_EMAILS });
-});
-
-apiRouter.post('/admin/remove', (req: Request, res: Response) => {
-  const requesterEmail = req.headers['x-user-email'] as string;
-  if (!isEmailAdmin(requesterEmail)) {
-    return res.status(403).json({ error: 'Unauthorized' });
-  }
-  const { email } = req.body;
-  if (!email || typeof email !== 'string') return res.status(400).json({ error: 'Invalid email' });
-  const normalized = email.trim().toLowerCase();
-  if (normalized === 'rock86367@gmail.com') {
-    return res.status(400).json({ error: 'Cannot remove root administrator' });
-  }
-  const idx = ADMIN_EMAILS.indexOf(normalized);
-  if (idx !== -1) {
-    ADMIN_EMAILS.splice(idx, 1);
-  }
-  return res.json({ success: true, adminEmails: ADMIN_EMAILS });
-});
-
-// ---------------------------------------------
-// 2. RESOURCE PREVIEW & SSRF PROTECTION
+// RESOURCE PREVIEW & SSRF PROTECTION
 // ---------------------------------------------
 apiRouter.post('/resources/preview', async (req: Request, res: Response) => {
   const { url } = req.body;
@@ -533,6 +436,10 @@ apiRouter.post('/components/search', rateLimit(20, 60000), async (req: Request, 
 apiRouter.post('/orders/create', async (req: Request, res: Response) => {
   const { userId, userEmail, userName, userPhone, items, shippingAddress } = req.body;
 
+  if (!CASHFREE_APP_ID || !CASHFREE_SECRET_KEY) {
+    return res.status(503).json({ error: 'Secure payment is not configured. Please contact support.' });
+  }
+
   if (!userId || !items || !Array.isArray(items) || items.length === 0) {
     return res.status(400).json({ error: 'Valid user and items required' });
   }
@@ -551,104 +458,141 @@ apiRouter.post('/orders/create', async (req: Request, res: Response) => {
 
   const orderId = `ORDER_${Date.now()}_${Math.random().toString(36).substring(2, 7).toUpperCase()}`;
 
-  // Call Cashfree API if keys configured
-  if (CASHFREE_APP_ID && CASHFREE_SECRET_KEY) {
-    try {
-      const baseUrl = CASHFREE_ENV === 'production' 
-        ? 'https://api.cashfree.com/pg/orders'
-        : 'https://sandbox.cashfree.com/pg/orders';
+  try {
+    const baseUrl = CASHFREE_ENV === 'production'
+      ? 'https://api.cashfree.com/pg/orders'
+      : 'https://sandbox.cashfree.com/pg/orders';
 
-      const payload = {
-        order_id: orderId,
-        order_amount: totalAmount,
-        order_currency: 'INR',
-        customer_details: {
-          customer_id: userId,
-          customer_name: userName || 'Student',
-          customer_email: userEmail || 'student@techcircuithub.com',
-          customer_phone: userPhone || '9876543210',
-        },
-        order_meta: {
-          return_url: `${process.env.APP_URL || ''}/payment/return?order_id=${orderId}`,
-          notify_url: `${process.env.APP_URL || ''}/api/cashfree/webhook`,
-        },
-      };
+    const payload = {
+      order_id: orderId,
+      order_amount: totalAmount,
+      order_currency: 'INR',
+      customer_details: {
+        customer_id: userId,
+        customer_name: userName || 'Student',
+        customer_email: userEmail || 'student@techcircuithub.com',
+        customer_phone: userPhone || '9876543210',
+      },
+      order_meta: {
+        return_url: `${process.env.APP_URL || ''}/payment/return?order_id=${orderId}`,
+        notify_url: `${process.env.APP_URL || ''}/api/cashfree/webhook`,
+      },
+    };
 
-      const cfRes = await fetch(baseUrl, {
-        method: 'POST',
-        headers: {
-          'x-client-id': CASHFREE_APP_ID,
-          'x-client-secret': CASHFREE_SECRET_KEY,
-          'x-api-version': '2023-08-01',
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(payload),
-      });
+    const cfRes = await fetch(baseUrl, {
+      method: 'POST',
+      headers: {
+        'x-client-id': CASHFREE_APP_ID,
+        'x-client-secret': CASHFREE_SECRET_KEY,
+        'x-api-version': '2023-08-01',
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(payload),
+    });
 
-      if (cfRes.ok) {
-        const cfData = await cfRes.json();
-        return res.json({
-          orderId,
-          amount: totalAmount,
-          paymentSessionId: cfData.payment_session_id,
-          cfOrderId: cfData.cf_order_id,
-          environment: CASHFREE_ENV,
-        });
-      }
-    } catch (err) {
-      console.error('Cashfree Create Order Error:', err);
+    if (!cfRes.ok) {
+      console.error(`Cashfree Create Order Error: provider returned HTTP ${cfRes.status}`);
+      return res.status(502).json({ error: 'Could not initialize secure payment. Please try again later.' });
     }
-  }
 
-  // Sandbox simulation session id when live sandbox keys are pending
-  const simulatedSessionId = `session_sim_${orderId}`;
-  return res.json({
-    orderId,
-    amount: totalAmount,
-    paymentSessionId: simulatedSessionId,
-    environment: 'sandbox-simulation',
-    message: 'Cashfree Sandbox test session initialized',
-  });
+    const cfData = await cfRes.json();
+    if (typeof cfData.payment_session_id !== 'string' || !cfData.payment_session_id) {
+      console.error('Cashfree Create Order Error: response did not include a payment session');
+      return res.status(502).json({ error: 'Could not initialize secure payment. Please try again later.' });
+    }
+
+    const createdAt = new Date().toISOString();
+    const order = {
+      id: orderId,
+      userId: String(userId),
+      userEmail: String(userEmail || ''),
+      userName: String(userName || 'Student'),
+      userPhone: String(userPhone || ''),
+      items: items.map((item: any) => ({
+        projectId: String(item.projectId || ''),
+        title: String(item.title || 'Project package'),
+        price: Number(item.price) || 0,
+        type: item.type === 'digital' ? 'digital' : 'physical',
+        quantity: Math.max(1, Math.floor(Number(item.quantity) || 1)),
+      })),
+      amount: totalAmount,
+      status: 'pending',
+      ...(shippingAddress ? { shippingAddress } : {}),
+      paymentSessionId: cfData.payment_session_id,
+      cfOrderId: cfData.cf_order_id,
+      createdAt,
+    };
+    try {
+      await getAdminFirestore().collection('orders').doc(orderId).set(order);
+    } catch (error) {
+      console.error('Order persistence failed:', error);
+      return res.status(503).json({ error: 'Could not save the order record. Please contact support before retrying payment.' });
+    }
+
+    return res.json({
+      orderId,
+      amount: totalAmount,
+      paymentSessionId: cfData.payment_session_id,
+      cfOrderId: cfData.cf_order_id,
+      environment: CASHFREE_ENV,
+    });
+  } catch (err) {
+    console.error('Cashfree Create Order Error:', err);
+    return res.status(502).json({ error: 'Could not initialize secure payment. Please try again later.' });
+  }
 });
 
 // Verify payment status
 apiRouter.post('/orders/:id/verify', async (req: Request, res: Response) => {
   const { id } = req.params;
 
-  if (CASHFREE_APP_ID && CASHFREE_SECRET_KEY) {
-    try {
-      const baseUrl = CASHFREE_ENV === 'production'
-        ? `https://api.cashfree.com/pg/orders/${id}`
-        : `https://sandbox.cashfree.com/pg/orders/${id}`;
-
-      const cfRes = await fetch(baseUrl, {
-        headers: {
-          'x-client-id': CASHFREE_APP_ID,
-          'x-client-secret': CASHFREE_SECRET_KEY,
-          'x-api-version': '2023-08-01',
-        },
-      });
-
-      if (cfRes.ok) {
-        const data = await cfRes.json();
-        const isPaid = data.order_status === 'PAID';
-        return res.json({
-          orderId: id,
-          status: isPaid ? 'paid' : (data.order_status.toLowerCase() || 'pending'),
-          isPaid,
-        });
-      }
-    } catch (err) {
-      console.error('Cashfree Verification Error:', err);
-    }
+  if (!CASHFREE_APP_ID || !CASHFREE_SECRET_KEY) {
+    return res.status(503).json({ error: 'Secure payment verification is not configured.' });
   }
 
-  // Simulation fallback: mark paid
-  return res.json({
-    orderId: id,
-    status: 'paid',
-    isPaid: true,
-  });
+  try {
+    const baseUrl = CASHFREE_ENV === 'production'
+      ? `https://api.cashfree.com/pg/orders/${id}`
+      : `https://sandbox.cashfree.com/pg/orders/${id}`;
+
+    const cfRes = await fetch(baseUrl, {
+      headers: {
+        'x-client-id': CASHFREE_APP_ID,
+        'x-client-secret': CASHFREE_SECRET_KEY,
+        'x-api-version': '2023-08-01',
+      },
+    });
+
+    if (!cfRes.ok) {
+      console.error(`Cashfree Verification Error: provider returned HTTP ${cfRes.status}`);
+      return res.status(502).json({ error: 'Could not verify payment right now.' });
+    }
+
+    const data = await cfRes.json();
+    const orderStatus = typeof data.order_status === 'string' ? data.order_status.toLowerCase() : 'pending';
+    const isPaid = orderStatus === 'paid';
+    try {
+      const orderRef = getAdminFirestore().collection('orders').doc(id);
+      const orderSnapshot = await orderRef.get();
+      if (orderSnapshot.exists) {
+        await orderRef.update({
+          status: isPaid ? 'paid' : (['failed', 'cancelled', 'expired'].includes(orderStatus) ? 'failed' : 'pending'),
+          ...(isPaid ? { paidAt: new Date().toISOString() } : {}),
+        });
+      }
+    } catch (error) {
+      console.error('Order status persistence failed:', error);
+      return res.status(503).json({ error: 'Payment was verified, but the order record could not be updated. Please contact support.' });
+    }
+    return res.json({
+      orderId: id,
+      status: isPaid ? 'paid' : (orderStatus || 'pending'),
+      isPaid,
+    });
+  } catch (err) {
+    console.error('Cashfree Verification Error:', err);
+    return res.status(502).json({ error: 'Could not verify payment right now.' });
+  }
 });
 
 // Cashfree Webhook endpoint (raw HMAC verification)
@@ -737,31 +681,4 @@ apiRouter.post('/analytics/events', (req: Request, res: Response) => {
     }
   }
   return res.json({ success: true, count: events?.length || 0 });
-});
-
-apiRouter.get('/admin/stats', (req: Request, res: Response) => {
-  const requesterEmail = req.headers['x-user-email'] as string;
-  if (!isEmailAdmin(requesterEmail)) {
-    return res.status(403).json({ error: 'Unauthorized' });
-  }
-
-  const views = eventBuffer.filter(e => e.type === 'opportunity_view').length;
-  const clicks = eventBuffer.filter(e => e.type === 'apply_click').length;
-  const applied = eventBuffer.filter(e => e.type === 'apply_confirmed').length;
-
-  return res.json({
-    totalStudents: 0,
-    newSignupsThisWeek: 0,
-    dailyActiveStudents: 0,
-    totalApplications: applied,
-    totalRevenue: 0,
-    funnel: {
-      views,
-      applyClicks: clicks,
-      applicationsSubmitted: applied,
-    },
-    topSkills: [],
-    nexarSearchesToday: 0,
-    nexarQuotaLimit: 1000,
-  });
 });

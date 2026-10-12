@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { useData } from '../context/DataContext';
 import { 
   ShoppingCart, 
   Trash2, 
@@ -15,9 +14,42 @@ import {
   Lock 
 } from 'lucide-react';
 
+interface SecurePaymentClient {
+  checkout: (options: { paymentSessionId: string; redirectTarget: '_self' }) => Promise<unknown>;
+}
+
+type SecurePaymentSdk = (options: { mode: 'sandbox' | 'production' }) => SecurePaymentClient;
+
+declare global {
+  interface Window {
+    Cashfree?: SecurePaymentSdk;
+  }
+}
+
+const loadSecurePaymentSdk = async (): Promise<SecurePaymentSdk> => {
+  if (window.Cashfree) return window.Cashfree;
+
+  await new Promise<void>((resolve, reject) => {
+    const script = document.createElement('script');
+    script.src = 'https://sdk.cashfree.com/js/v3/cashfree.js';
+    script.async = true;
+    script.onload = () => resolve();
+    script.onerror = () => {
+      script.remove();
+      reject(new Error('Secure payment could not be loaded. Please try again.'));
+    };
+    document.head.appendChild(script);
+  });
+
+  if (!window.Cashfree) {
+    throw new Error('Secure payment could not be loaded. Please try again.');
+  }
+
+  return window.Cashfree;
+};
+
 export const CartCheckoutPage: React.FC = () => {
-  const { cart, removeFromCart, clearCart, cartTotal, user, profile, login } = useAuth();
-  const navigate = useNavigate();
+  const { cart, removeFromCart, cartTotal, user, profile, login } = useAuth();
 
   const [name, setName] = useState(profile?.displayName || user?.displayName || '');
   const [email, setEmail] = useState(profile?.email || user?.email || '');
@@ -30,6 +62,7 @@ export const CartCheckoutPage: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
 
   const hasPhysical = cart.some((i) => i.type === 'physical');
+  const cartItemCount = cart.reduce((count, item) => count + item.quantity, 0);
 
   const handleCheckout = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -70,12 +103,23 @@ export const CartCheckoutPage: React.FC = () => {
       }
 
       const orderData = await res.json();
+      if (
+        !orderData ||
+        typeof orderData.orderId !== 'string' ||
+        typeof orderData.paymentSessionId !== 'string' ||
+        typeof orderData.environment !== 'string'
+      ) {
+        throw new Error('The secure payment session could not be created. Please try again.');
+      }
 
-      // Clear the local cart
-      clearCart();
-
-      // If live Cashfree session or sandbox simulation, forward to return/receipt page
-      navigate(`/payment/return?order_id=${orderData.orderId}`);
+      const initializePayment = await loadSecurePaymentSdk();
+      const paymentClient = initializePayment({
+        mode: orderData.environment === 'production' ? 'production' : 'sandbox',
+      });
+      await paymentClient.checkout({
+        paymentSessionId: orderData.paymentSessionId,
+        redirectTarget: '_self',
+      });
     } catch (err: any) {
       console.error(err);
       setError(err.message || 'Payment processing error');
@@ -126,7 +170,7 @@ export const CartCheckoutPage: React.FC = () => {
           {/* Cart Item Cards */}
           <div className="bg-white border border-stone-200 rounded-2xl p-5 space-y-4 shadow-sm">
             <h2 className="text-xs font-mono uppercase font-bold text-slate-500 tracking-wider">
-              Selected Packages ({cart.length})
+              Selected Projects ({cartItemCount})
             </h2>
 
             <div className="divide-y divide-stone-100">
@@ -139,7 +183,8 @@ export const CartCheckoutPage: React.FC = () => {
                     <div>
                       <h3 className="text-xs font-bold text-slate-950 line-clamp-1">{item.title}</h3>
                       <span className="text-[10px] font-mono text-orange-600 uppercase font-semibold">
-                        {item.type} {item.quantity > 1 ? `x${item.quantity}` : ''}
+                        {item.type === 'physical' ? 'Physical project' : 'Digital project'}
+                        {item.quantity > 1 ? ` · Qty ${item.quantity}` : ''}
                       </span>
                     </div>
                   </div>
@@ -203,12 +248,12 @@ export const CartCheckoutPage: React.FC = () => {
               />
             </div>
 
-            {/* Address fields for physical kits */}
+            {/* Shipping address is required for physical project orders. */}
             {hasPhysical && (
               <div className="pt-3 border-t border-stone-100 space-y-3">
                 <div className="flex items-center gap-1.5 text-orange-600 font-semibold">
                   <MapPin className="w-4 h-4" />
-                  <span>Physical Kit Shipping Address</span>
+                  <span>Project Delivery Address</span>
                 </div>
 
                 <div>
@@ -301,13 +346,13 @@ export const CartCheckoutPage: React.FC = () => {
               className="w-full py-3.5 rounded-xl bg-orange-500 hover:bg-orange-600 text-white font-bold text-sm transition-all shadow-md shadow-orange-500/25 flex items-center justify-center gap-2 active:scale-95 cursor-pointer disabled:opacity-50"
             >
               <Zap className="w-4 h-4" />
-              <span>{loading ? 'Connecting Cashfree PG...' : 'Pay via Cashfree (UPI / Cards)'}</span>
+              <span>{loading ? 'Connecting to secure payment...' : 'Pay securely (UPI / Cards)'}</span>
             </button>
 
             <div className="pt-2 text-[11px] text-slate-500 space-y-1.5 text-center">
               <p className="flex items-center justify-center gap-1.5 text-orange-600 font-semibold">
                 <ShieldCheck className="w-3.5 h-3.5" />
-                <span>Cashfree Payments (PG v2023-08-01) 256-bit SSL</span>
+                <span>Secure encrypted payment processing</span>
               </p>
               <p>UPI first on mobile · Immediate digital unlock · No COD</p>
             </div>

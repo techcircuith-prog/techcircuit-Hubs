@@ -1,19 +1,20 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
-import { Home, Compass, Cpu, Award, User } from 'lucide-react';
+import { Home, Compass, Cpu, Activity, User, CircuitBoard } from 'lucide-react';
 
 export const BottomNav: React.FC = () => {
   const tabs = [
     { label: 'Home', path: '/', icon: Home, end: true },
     { label: 'Explore', path: '/explore', icon: Compass },
     { label: 'Projects', path: '/projects', icon: Cpu },
-    { label: 'Skills', path: '/skills', icon: Award },
+    { label: 'Activity', path: '/dashboard', icon: Activity },
+    { label: 'Components', path: '/components', icon: CircuitBoard },
     { label: 'Profile', path: '/profile', icon: User },
   ];
 
   return (
     <nav className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-white/95 backdrop-blur-lg border-t border-orange-100 px-2 py-1 shadow-lg">
-      <div className="flex items-center justify-around h-14 max-w-md mx-auto">
+      <div className="flex items-center justify-around h-14 max-w-lg mx-auto">
         {tabs.map((tab) => {
           const Icon = tab.icon;
           return (
@@ -22,7 +23,7 @@ export const BottomNav: React.FC = () => {
               to={tab.path}
               end={tab.end}
               className={({ isActive }) =>
-                `flex flex-col items-center justify-center w-16 h-12 min-h-[44px] min-w-[44px] rounded-xl transition-all duration-200 ${
+                `flex flex-col items-center justify-center flex-1 h-12 min-h-[44px] min-w-[44px] rounded-xl transition-all duration-200 ${
                   isActive
                     ? 'text-orange-600 font-semibold'
                     : 'text-slate-500 hover:text-slate-800'

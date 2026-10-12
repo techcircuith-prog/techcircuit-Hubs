@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { collection, getDocs } from 'firebase/firestore';
 import { db } from '../../lib/firebase';
 import { UserProfile } from '../../types';
@@ -11,7 +11,8 @@ import {
   Award, 
   Briefcase, 
   GraduationCap, 
-  CheckCircle2 
+  CheckCircle2,
+  RefreshCw,
 } from 'lucide-react';
 
 export const AdminStudents: React.FC = () => {
@@ -19,20 +20,28 @@ export const AdminStudents: React.FC = () => {
   const [search, setSearch] = useState('');
   const [selectedCollege, setSelectedCollege] = useState('All');
   const [selectedStudent, setSelectedStudent] = useState<UserProfile | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const loadStudents = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const result = await getDocs(collection(db, 'users'));
+      setStudents(result.docs.map((document) => ({
+        ...document.data(),
+        id: document.id,
+      } as UserProfile)));
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Could not load student profiles.');
+    } finally {
+      setLoading(false);
+    }
+  }, []);
 
   useEffect(() => {
-    async function loadStudents() {
-      try {
-        const snap = await getDocs(collection(db, 'users'));
-        const list: UserProfile[] = [];
-        snap.forEach((d) => list.push({ id: d.id, ...d.data() } as UserProfile));
-        setStudents(list);
-      } catch (err) {
-        console.error(err);
-      }
-    }
-    loadStudents();
-  }, []);
+    void loadStudents();
+  }, [loadStudents]);
 
   const filtered = students.filter((s) => {
     if (selectedCollege !== 'All' && s.college !== selectedCollege) return false;
@@ -74,17 +83,29 @@ export const AdminStudents: React.FC = () => {
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-xl font-bold font-mono text-slate-950">Engineering Students Roster</h1>
-          <p className="text-xs text-slate-500">Total registered profiles: {students.length}</p>
+          <p className="text-xs text-slate-500">Total registered profiles: {error ? 'Unavailable' : students.length}</p>
         </div>
 
-        <button
-          onClick={exportToCsv}
-          className="px-4 py-2 bg-white hover:bg-stone-50 border border-stone-200 text-slate-700 text-xs font-semibold rounded-xl flex items-center gap-1.5 transition-colors cursor-pointer shadow-xs"
-        >
-          <Download className="w-4 h-4 text-orange-600" />
-          <span>Export Students to CSV</span>
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => void loadStudents()}
+            disabled={loading}
+            className="px-3 py-2 bg-white hover:bg-orange-50 border border-orange-200 text-orange-700 text-xs font-semibold rounded-xl flex items-center gap-1.5 transition-colors disabled:opacity-60"
+          >
+            <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} /> Refresh
+          </button>
+          <button
+            onClick={exportToCsv}
+            disabled={Boolean(error)}
+            className="px-4 py-2 bg-white hover:bg-stone-50 border border-stone-200 text-slate-700 text-xs font-semibold rounded-xl flex items-center gap-1.5 transition-colors cursor-pointer shadow-xs disabled:opacity-50"
+          >
+            <Download className="w-4 h-4 text-orange-600" />
+            <span>Export Students to CSV</span>
+          </button>
+        </div>
       </div>
+      {error && <div role="alert" className="rounded-xl border border-orange-200 bg-orange-50 p-3 text-xs text-orange-800">{error}</div>}
 
       {/* Filter Bar */}
       <div className="flex flex-col sm:flex-row gap-3">
@@ -103,7 +124,11 @@ export const AdminStudents: React.FC = () => {
       {/* Students List */}
       <div className="bg-white border border-stone-200 rounded-2xl overflow-hidden shadow-xs">
         <div className="divide-y divide-stone-100">
-          {filtered.map((st) => (
+          {loading ? <p className="p-5 text-xs text-slate-500">Loading student profiles…</p> : error ? (
+            <p className="p-5 text-xs text-orange-800">Student roster is unavailable until Firebase server access is configured.</p>
+          ) : filtered.length === 0 ? (
+            <p className="p-5 text-xs text-slate-500">No students match this search.</p>
+          ) : filtered.map((st) => (
             <div
               key={st.id}
               onClick={() => setSelectedStudent(st)}
