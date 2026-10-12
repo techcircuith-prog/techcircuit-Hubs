@@ -2,7 +2,7 @@ import express, { Request, Response } from 'express';
 import crypto from 'crypto';
 import dns from 'dns/promises';
 import { z } from 'zod';
-import { getAdminFirestore } from './admin';
+import { getAdminFirestore } from './admin.js';
 
 export const apiRouter = express.Router();
 apiRouter.use(express.json({
